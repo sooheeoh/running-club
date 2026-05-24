@@ -65,7 +65,7 @@
   .cal-cell.sunday { color: #EF4444; }
   .cal-cell.saturday { color: var(--primary); }
   .cal-cell.today.sunday, .cal-cell.today.saturday { color: var(--primary); }
-  .run-dots { display: flex; gap: 2px; margin-top: 2px; }
+  .run-dots { position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); display: flex; gap: 2px; }
   .run-dot { width: 5px; height: 5px; border-radius: 50%; }
   .run-dot.upcoming { background: var(--primary); }
   .run-dot.past { background: #D1D5DB; }
@@ -267,6 +267,35 @@
   .empty-icon { font-size: 48px; margin-bottom: 12px; }
   .empty-text { font-size: 15px; }
 
+  /* ANALYTICS */
+  .analytics-btn {
+    background: none; border: none; cursor: pointer;
+    color: #9CA3AF; padding: 4px 6px; border-radius: 6px;
+    display: flex; align-items: center; transition: color .2s; line-height: 1;
+  }
+  .analytics-btn:hover { color: var(--primary); }
+  .analytics-tab-row { display: flex; gap: 8px; margin-bottom: 20px; }
+  .analytics-tab {
+    flex: 1; padding: 9px; border: 1.5px solid var(--border); border-radius: 10px;
+    background: none; font-size: 13px; font-weight: 600; cursor: pointer;
+    color: var(--text-secondary); transition: all .2s; font-family: inherit;
+  }
+  .analytics-tab.active { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
+  .stat-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+  .stat-card { background: var(--bg); border-radius: 14px; padding: 16px; text-align: center; }
+  .stat-num { font-size: 32px; font-weight: 800; color: var(--primary); line-height: 1; }
+  .stat-label { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+  .leaderboard { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+  .lb-row {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--bg); border-radius: 12px; padding: 12px 14px;
+  }
+  .lb-rank { font-size: 16px; width: 26px; text-align: center; }
+  .lb-name { flex: 1; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .lb-dist { font-size: 15px; font-weight: 700; text-align: right; }
+  .lb-count { font-size: 11px; color: var(--text-secondary); text-align: right; }
+  .badge-legend { background: #FEF3C7; color: #92400E; font-size: 10px; padding: 2px 7px; border-radius: 10px; font-weight: 700; }
+
   /* NEON TICKER */
   .neon-ticker {
     background: #0a0a0a;
@@ -319,7 +348,14 @@
 <!-- HEADER -->
 <div class="header">
   <div class="header-top">
-    <h1>🏃‍♀️ 한강런 클럽</h1>
+    <div style="display:flex; align-items:center; gap:6px;">
+      <h1>🏃‍♀️ 한강런 클럽</h1>
+      <button class="analytics-btn" onclick="openAnalytics()" title="애널리틱스">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <rect x="3" y="12" width="4" height="9"/><rect x="10" y="7" width="4" height="14"/><rect x="17" y="3" width="4" height="18"/>
+        </svg>
+      </button>
+    </div>
     <div class="view-toggle">
       <button class="view-btn active" id="btn-cal" onclick="setView('calendar')">달력</button>
       <button class="view-btn" id="btn-list" onclick="setView('list')">목록</button>
@@ -432,6 +468,19 @@
   <div class="modal detail-modal" id="detail-modal">
     <div class="modal-handle"></div>
     <div id="detail-content"></div>
+  </div>
+</div>
+
+<!-- ANALYTICS MODAL -->
+<div class="modal-overlay" id="analytics-modal-overlay" onclick="handleOverlayClick(event, 'analytics-modal-overlay')">
+  <div class="modal" id="analytics-modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" style="margin-bottom:16px">클럽 애널리틱스</div>
+    <div class="analytics-tab-row">
+      <button class="analytics-tab active" id="tab-all" onclick="switchAnalyticsTab('all')">전체</button>
+      <button class="analytics-tab" id="tab-month" onclick="switchAnalyticsTab('month')">이번 달</button>
+    </div>
+    <div id="analytics-content"></div>
   </div>
 </div>
 
@@ -634,7 +683,7 @@ function renderCalendar() {
       const cls = comp ? 'completed' : isPast ? 'past' : 'upcoming';
       return `<div class="run-dot ${cls}" title="${comp ? '완료' : ''}"></div>`;
     }).join('');
-    grid.innerHTML += `<div class="${cls}" onclick="filterCalendarByDate('${dateStr}')">${d}${dots ? `<div class="run-dots">${dots}</div>` : ''}</div>`;
+    grid.innerHTML += `<div class="${cls}" onclick="filterCalendarByDate('${dateStr}')">${d}<div class="run-dots">${dots}</div></div>`;
   }
 
   const totalCells = firstDay + lastDate;
@@ -1104,6 +1153,82 @@ function dustIndexPM10(pm10) {
   if (pm10 <= 80)  return { icon: '🟡', label: '보통' };
   if (pm10 <= 150) return { icon: '🟠', label: '나쁨' };
   return              { icon: '🔴', label: '매우나쁨' };
+}
+
+// ─── ANALYTICS ───────────────────────────────────────────────────
+let analyticsTab = 'all';
+
+function openAnalytics() {
+  analyticsTab = 'all';
+  document.getElementById('tab-all').classList.add('active');
+  document.getElementById('tab-month').classList.remove('active');
+  renderAnalyticsContent();
+  openModal('analytics-modal-overlay');
+}
+
+function switchAnalyticsTab(tab) {
+  analyticsTab = tab;
+  document.getElementById('tab-all').classList.toggle('active', tab === 'all');
+  document.getElementById('tab-month').classList.toggle('active', tab === 'month');
+  renderAnalyticsContent();
+}
+
+function buildLeaderboard(filteredRuns) {
+  const stats = {};
+  filteredRuns.forEach(run => {
+    (run.participants || []).forEach(p => {
+      if (!stats[p]) stats[p] = { count: 0, distance: 0 };
+      stats[p].count++;
+      stats[p].distance += parseFloat(run.distance) || 0;
+    });
+  });
+  return Object.entries(stats)
+    .map(([name, s]) => ({ name, ...s }))
+    .sort((a, b) => b.distance - a.distance || b.count - a.count);
+}
+
+function renderAnalyticsContent() {
+  const today = new Date().toISOString().slice(0, 10);
+  const monthStr = today.slice(0, 7);
+
+  const completedAll = runs.filter(isCompleted);
+  const completedMonth = completedAll.filter(r => r.date && r.date.startsWith(monthStr));
+
+  const sourceRuns = analyticsTab === 'all' ? completedAll : completedMonth;
+  const leaderboard = buildLeaderboard(sourceRuns);
+
+  let lbHtml = '';
+  if (leaderboard.length === 0) {
+    lbHtml = `<div style="text-align:center; color:var(--text-secondary); padding:28px 0; font-size:14px;">완료된 러닝 기록이 없어요</div>`;
+  } else {
+    lbHtml = leaderboard.map((entry, i) => {
+      const rankIcon = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `<span style="font-size:13px;font-weight:700;color:var(--text-secondary)">${i+1}</span>`;
+      const legendBadge = i < 2 ? `<span class="badge-legend">[레전드]</span>` : '';
+      return `
+        <div class="lb-row">
+          <div class="lb-rank">${rankIcon}</div>
+          <div class="lb-name">${esc(entry.name)}${legendBadge}</div>
+          <div>
+            <div class="lb-dist">${entry.distance % 1 === 0 ? entry.distance : entry.distance.toFixed(1)}km</div>
+            <div class="lb-count">${entry.count}회 참여</div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  document.getElementById('analytics-content').innerHTML = `
+    <div class="stat-row">
+      <div class="stat-card">
+        <div class="stat-num">${completedAll.length}</div>
+        <div class="stat-label">총 완료 런</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">${completedMonth.length}</div>
+        <div class="stat-label">이번 달 완료 런</div>
+      </div>
+    </div>
+    <div class="detail-section-title">${analyticsTab === 'all' ? '전체 기간' : '이번 달'} 멤버 기록</div>
+    <div class="leaderboard">${lbHtml}</div>`;
 }
 
 // ─── MODALS ──────────────────────────────────────────────────────
