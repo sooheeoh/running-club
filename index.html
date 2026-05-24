@@ -1203,7 +1203,8 @@ function renderAnalyticsContent() {
   } else {
     lbHtml = leaderboard.map((entry, i) => {
       const rankIcon = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `<span style="font-size:13px;font-weight:700;color:var(--text-secondary)">${i+1}</span>`;
-      const legendBadge = i < 2 ? `<span class="badge-legend">[레전드]</span>` : '';
+      const labels = ['[광인]', '[집요]', '[신예]'];
+      const legendBadge = i < 3 ? `<span class="badge-legend">${labels[i]}</span>` : '';
       return `
         <div class="lb-row">
           <div class="lb-rank">${rankIcon}</div>
