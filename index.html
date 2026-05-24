@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>🏃‍♀️ 한강런 클럽</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --primary: #2563EB;
+    --primary-light: #EFF6FF;
+    --bg: #F8F9FA;
+    --card: #FFFFFF;
+    --text: #1A1A1A;
+    --text-secondary: #6B7280;
+    --border: #E5E7EB;
+    --shadow: 0 2px 12px rgba(0,0,0,0.08);
+    --radius: 16px;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD Gothic Neo', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding-bottom: 90px;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--card);
+    padding: 16px 20px 12px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    border-bottom: 1px solid var(--border);
+  }
+  .header-top { display: flex; align-items: center; justify-content: space-between; }
+  .header h1 { font-size: 20px; font-weight: 700; }
+  .view-toggle { display: flex; gap: 4px; background: var(--bg); border-radius: 8px; padding: 3px; }
+  .view-btn {
+    border: none; background: transparent; padding: 6px 12px; border-radius: 6px;
+    font-size: 13px; cursor: pointer; color: var(--text-secondary); transition: all .2s;
+  }
+  .view-btn.active { background: var(--card); color: var(--primary); font-weight: 600; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+
+  /* CALENDAR */
+  .calendar-wrap { padding: 16px 20px; }
+  .cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .cal-nav button { border: none; background: none; font-size: 20px; cursor: pointer; color: var(--text-secondary); padding: 4px 8px; }
+  .cal-nav h2 { font-size: 16px; font-weight: 700; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+  .cal-day-label { text-align: center; font-size: 11px; color: var(--text-secondary); padding: 4px 0; font-weight: 600; }
+  .cal-day-label:first-child { color: #EF4444; }
+  .cal-day-label:last-child { color: var(--primary); }
+  .cal-cell {
+    aspect-ratio: 1; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; border-radius: 10px; cursor: pointer; position: relative;
+    font-size: 13px; transition: background .15s;
+  }
+  .cal-cell:hover { background: var(--primary-light); }
+  .cal-cell.today { background: var(--primary-light); font-weight: 700; color: var(--primary); }
+  .cal-cell.other-month { color: #D1D5DB; }
+  .cal-cell.sunday { color: #EF4444; }
+  .cal-cell.saturday { color: var(--primary); }
+  .cal-cell.today.sunday, .cal-cell.today.saturday { color: var(--primary); }
+  .run-dots { display: flex; gap: 2px; margin-top: 2px; }
+  .run-dot { width: 5px; height: 5px; border-radius: 50%; }
+  .run-dot.upcoming { background: var(--primary); }
+  .run-dot.past { background: #D1D5DB; }
+  .run-dot.completed { background: #10B981; }
+  .badge-completed { background: #D1FAE5; color: #065F46; }
+
+  /* LIST VIEW */
+  .list-wrap { padding: 0 16px; }
+  .section-title { font-size: 13px; font-weight: 700; color: var(--text-secondary); padding: 16px 4px 8px; text-transform: uppercase; letter-spacing: .5px; }
+
+  /* RUN CARD */
+  .run-card {
+    background: var(--card); border-radius: var(--radius); padding: 16px;
+    margin-bottom: 12px; box-shadow: var(--shadow); cursor: pointer;
+    transition: transform .15s, box-shadow .15s; border: 1px solid transparent;
+  }
+  .run-card:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(0,0,0,0.12); }
+  .run-card.upcoming { border-color: #DBEAFE; }
+  .run-card.past { opacity: 0.65; }
+  .card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .card-title { font-size: 16px; font-weight: 700; line-height: 1.3; flex: 1; }
+  .card-badges { display: flex; gap: 6px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px;
+    border-radius: 20px; font-size: 11px; font-weight: 600; white-space: nowrap;
+  }
+  .badge-distance { background: var(--primary-light); color: var(--primary); }
+  .badge-green { background: #D1FAE5; color: #065F46; }
+  .badge-yellow { background: #FEF3C7; color: #92400E; }
+  .badge-red { background: #FEE2E2; color: #991B1B; }
+  .badge-purple { background: #F3E8FF; color: #7E22CE; }
+  .card-meta { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 8px; }
+  .meta-item { display: flex; align-items: center; gap: 4px; font-size: 13px; color: var(--text-secondary); }
+  .card-creator { margin-top: 6px; font-size: 11px; color: var(--text-secondary); }
+  .card-participants { margin-top: 10px; }
+  .participant-label { font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; }
+  .participant-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+  .chip {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 20px;
+    padding: 3px 10px; font-size: 12px; display: flex; align-items: center; gap: 4px;
+  }
+  .chip-remove { background: none; border: none; cursor: pointer; color: #9CA3AF; font-size: 14px; padding: 0; line-height: 1; }
+  .chip-remove:hover { color: #EF4444; }
+  .card-photos { margin-top: 10px; display: flex; gap: 8px; }
+  .photo-thumb {
+    width: 80px; height: 80px; border-radius: 10px; object-fit: cover;
+    cursor: pointer; border: 1px solid var(--border);
+  }
+
+  /* HERO CARD */
+  .hero-wrap { padding: 16px 16px 0; }
+  .hero-card {
+    background: linear-gradient(135deg, #1D4ED8 0%, #3B82F6 100%);
+    border-radius: 20px; padding: 20px; color: white; margin-bottom: 8px;
+    cursor: pointer; position: relative; overflow: hidden;
+  }
+  .hero-card::after {
+    content: '🏃‍♀️'; position: absolute; right: -8px; bottom: -8px;
+    font-size: 80px; opacity: 0.2;
+  }
+  .hero-label { font-size: 11px; font-weight: 700; opacity: 0.8; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+  .hero-title { font-size: 22px; font-weight: 800; margin-bottom: 10px; }
+  .hero-meta { display: flex; flex-wrap: wrap; gap: 10px; }
+  .hero-meta-item { display: flex; align-items: center; gap: 4px; font-size: 13px; opacity: 0.9; }
+  .hero-weather { margin-top: 12px; padding: 10px 12px; background: rgba(255,255,255,0.2); border-radius: 10px; display: flex; gap: 14px; flex-wrap: wrap; }
+
+  /* FAB */
+  .fab {
+    position: fixed; right: 20px; bottom: 24px; z-index: 200;
+    width: 56px; height: 56px; border-radius: 50%;
+    background: var(--primary); color: white; border: none;
+    font-size: 28px; cursor: pointer; box-shadow: 0 4px 16px rgba(37,99,235,0.45);
+    display: flex; align-items: center; justify-content: center; transition: transform .15s;
+  }
+  .fab:hover { transform: scale(1.08); }
+
+  /* NICKNAME MODAL */
+  .nickname-modal-box {
+    background: var(--card); width: 100%; border-radius: 24px 24px 0 0;
+    padding: 0 20px 40px;
+    transform: translateY(100%); transition: transform .3s cubic-bezier(.25,.8,.25,1);
+  }
+  .modal-overlay.open .nickname-modal-box { transform: translateY(0); }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 300;
+    display: flex; align-items: flex-end; opacity: 0; pointer-events: none; transition: opacity .25s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal {
+    background: var(--card); width: 100%; border-radius: 24px 24px 0 0;
+    max-height: 92vh; overflow-y: auto; padding: 0 20px 40px;
+    transform: translateY(100%); transition: transform .3s cubic-bezier(.25,.8,.25,1);
+  }
+  .modal-overlay.open .modal { transform: translateY(0); }
+  .modal-handle { width: 36px; height: 4px; background: #E5E7EB; border-radius: 2px; margin: 12px auto 16px; }
+  .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 20px; }
+  .modal-section { margin-bottom: 20px; }
+  .form-label { font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; display: block; }
+  .form-input {
+    width: 100%; border: 1.5px solid var(--border); border-radius: 10px;
+    padding: 11px 14px; font-size: 15px; outline: none; transition: border-color .2s;
+    font-family: inherit; background: var(--card);
+  }
+  .form-input:focus { border-color: var(--primary); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .btn-primary {
+    width: 100%; background: var(--primary); color: white; border: none;
+    border-radius: 12px; padding: 15px; font-size: 16px; font-weight: 700;
+    cursor: pointer; margin-top: 8px; transition: opacity .2s;
+  }
+  .btn-primary:hover { opacity: 0.9; }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-danger {
+    width: 100%; background: #FEE2E2; color: #DC2626; border: none; border-radius: 12px;
+    padding: 13px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 4px;
+  }
+
+  /* PARTICIPANT INPUT */
+  .participant-input-row { display: flex; gap: 8px; }
+  .participant-input-row .form-input { flex: 1; }
+  .btn-add {
+    background: var(--primary-light); color: var(--primary); border: none;
+    border-radius: 10px; padding: 0 16px; font-size: 20px; cursor: pointer; font-weight: 700;
+  }
+
+  /* PHOTO UPLOAD */
+  .photo-upload-area {
+    border: 2px dashed var(--border); border-radius: 12px; padding: 20px;
+    text-align: center; cursor: pointer; transition: border-color .2s, background .2s;
+  }
+  .photo-upload-area:hover { border-color: var(--primary); background: var(--primary-light); }
+  .photo-upload-area input { display: none; }
+  .photo-preview-row { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+  .photo-preview-item { position: relative; }
+  .photo-preview-item img { width: 80px; height: 80px; border-radius: 10px; object-fit: cover; }
+  .photo-remove {
+    position: absolute; top: -6px; right: -6px; background: #EF4444; color: white;
+    border: 2px solid white; border-radius: 50%; width: 22px; height: 22px;
+    font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    font-weight: 700; line-height: 1;
+  }
+
+  /* DETAIL MODAL */
+  .detail-modal .detail-hero {
+    background: linear-gradient(135deg, #1D4ED8 0%, #3B82F6 100%);
+    margin: 0 -20px; padding: 20px 20px 24px; color: white;
+  }
+  .detail-title { font-size: 22px; font-weight: 800; margin-bottom: 10px; }
+  .detail-section { margin-top: 20px; }
+  .detail-section-title { font-size: 12px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 10px; }
+  .detail-info-grid { display: grid; gap: 10px; }
+  .detail-info-item { display: flex; align-items: center; gap: 10px; }
+  .detail-info-icon { font-size: 18px; width: 32px; text-align: center; }
+  .detail-info-text { font-size: 14px; }
+  .detail-info-text a { color: var(--primary); text-decoration: none; }
+  .weather-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .weather-card { background: var(--bg); border-radius: 10px; padding: 10px; text-align: center; }
+  .weather-icon { font-size: 20px; }
+  .weather-value { font-size: 14px; font-weight: 700; margin-top: 2px; }
+  .weather-label { font-size: 10px; color: var(--text-secondary); }
+  .dust-index { text-align: center; padding: 12px; background: var(--bg); border-radius: 12px; margin-top: 10px; }
+  .dust-index-label { font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }
+  .dust-index-badge { font-size: 15px; font-weight: 700; }
+  .photo-gallery { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+  .gallery-img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 12px; cursor: pointer; }
+
+  /* LIGHTBOX */
+  .lightbox {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 500;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity .2s;
+  }
+  .lightbox.open { opacity: 1; pointer-events: all; }
+  .lightbox img { max-width: 95%; max-height: 90vh; border-radius: 8px; }
+  .lightbox-close {
+    position: absolute; top: 16px; right: 16px; color: white; background: rgba(0,0,0,0.5);
+    border: none; border-radius: 50%; width: 36px; height: 36px; font-size: 18px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+  }
+
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: #1A1A1A; color: white; padding: 10px 20px; border-radius: 20px;
+    font-size: 14px; z-index: 600; opacity: 0; transition: all .3s; pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* LOADING */
+  .spinner {
+    display: inline-block; width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.4);
+    border-top-color: white; border-radius: 50%; animation: spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .empty-state { text-align: center; padding: 48px 20px; color: var(--text-secondary); }
+  .empty-icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-text { font-size: 15px; }
+
+  /* NEON TICKER */
+  .neon-ticker {
+    background: #0a0a0a;
+    overflow: hidden;
+    padding: 7px 0;
+    white-space: nowrap;
+    position: relative;
+  }
+  .neon-ticker::before, .neon-ticker::after {
+    content: '';
+    position: absolute;
+    top: 0; bottom: 0; width: 32px; z-index: 2;
+    pointer-events: none;
+  }
+  .neon-ticker::before { left: 0; background: linear-gradient(to right, #0a0a0a, transparent); }
+  .neon-ticker::after  { right: 0; background: linear-gradient(to left, #0a0a0a, transparent); }
+  .neon-track {
+    display: inline-flex;
+    gap: 0;
+    animation: neon-scroll 38s linear infinite;
+  }
+  .neon-track:hover { animation-play-state: paused; }
+  @keyframes neon-scroll {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+  .neon-phrase {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: #39FF8F;
+    text-shadow: 0 0 8px #39FF8F, 0 0 18px #39FF8F, 0 0 32px #1aff70;
+    padding: 0 28px;
+    font-family: 'Courier New', Courier, monospace;
+  }
+  .neon-sep {
+    display: inline-block;
+    color: #FF2D78;
+    text-shadow: 0 0 8px #FF2D78, 0 0 18px #FF2D78;
+    font-size: 11px;
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: 700;
+    padding: 0 4px;
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-top">
+    <h1>🏃‍♀️ 한강런 클럽</h1>
+    <div class="view-toggle">
+      <button class="view-btn active" id="btn-cal" onclick="setView('calendar')">달력</button>
+      <button class="view-btn" id="btn-list" onclick="setView('list')">목록</button>
+    </div>
+  </div>
+</div>
+
+<!-- NEON TICKER -->
+<div class="neon-ticker" id="neon-ticker">
+  <div class="neon-track" id="neon-track"></div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div id="view-calendar">
+  <div class="calendar-wrap">
+    <div class="cal-nav">
+      <button onclick="changeMonth(-1)">‹</button>
+      <h2 id="cal-month-label"></h2>
+      <button onclick="changeMonth(1)">›</button>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+  </div>
+  <div class="list-wrap" id="cal-runs-list"></div>
+</div>
+
+<div id="view-list" style="display:none">
+  <div class="hero-wrap" id="hero-section"></div>
+  <div class="list-wrap" id="all-runs-list"></div>
+</div>
+
+<!-- FAB -->
+<button class="fab" onclick="openAddModal()" title="새 런 추가">＋</button>
+
+<!-- NICKNAME MODAL -->
+<div class="modal-overlay" id="nickname-modal-overlay" onclick="handleOverlayClick(event, 'nickname-modal-overlay')">
+  <div class="modal" id="nickname-modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">내 닉네임이 뭐예요? 👋</div>
+    <p style="font-size:14px; color:var(--text-secondary); margin-bottom:20px;">모임을 연 사람으로 표시돼요. 한 번만 입력하면 기억해드려요.</p>
+    <div class="modal-section">
+      <label class="form-label">닉네임</label>
+      <input type="text" class="form-input" id="f-nickname" placeholder="예: 붕어빵, 달리기왕, 민수" maxlength="12">
+    </div>
+    <button class="btn-primary" onclick="confirmNickname()">확인</button>
+  </div>
+</div>
+
+<!-- ADD/EDIT MODAL -->
+<div class="modal-overlay" id="add-modal-overlay" onclick="handleOverlayClick(event, 'add-modal-overlay')">
+  <div class="modal" id="add-modal">
+    <div class="modal-handle"></div>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+      <div class="modal-title" id="modal-title-text" style="margin-bottom:0">새 런 추가</div>
+      <div id="creator-badge-display" style="font-size:12px; color:var(--text-secondary);"></div>
+    </div>
+
+    <div class="modal-section">
+      <label class="form-label">런 제목 / 별칭 *</label>
+      <input type="text" class="form-input" id="f-title" placeholder="예: 어린이대공원 붕어빵런">
+    </div>
+    <div class="modal-section form-row">
+      <div>
+        <label class="form-label">날짜 *</label>
+        <input type="date" class="form-input" id="f-date">
+      </div>
+      <div>
+        <label class="form-label">시간 *</label>
+        <input type="time" class="form-input" id="f-time">
+      </div>
+    </div>
+    <div class="modal-section">
+      <label class="form-label">장소</label>
+      <input type="text" class="form-input" id="f-location" placeholder="예: 어린이대공원 정문 앞">
+    </div>
+    <div class="modal-section">
+      <label class="form-label">예상 거리 (km)</label>
+      <input type="number" class="form-input" id="f-distance" placeholder="5" min="0" step="0.1">
+    </div>
+    <div class="modal-section">
+      <label class="form-label">코스 URL (선택)</label>
+      <input type="url" class="form-input" id="f-course-url" placeholder="https://...">
+    </div>
+    <div class="modal-section">
+      <label class="form-label">참여자</label>
+      <div class="participant-input-row">
+        <input type="text" class="form-input" id="f-participant-input" placeholder="이름 입력 후 추가">
+        <button class="btn-add" onclick="addParticipantToForm()">＋</button>
+      </div>
+      <div class="participant-chips" id="f-participant-chips" style="margin-top:8px; display:flex; flex-wrap:wrap; gap:4px;"></div>
+    </div>
+    <div class="modal-section" id="photo-section">
+      <label class="form-label">러닝 후 사진 (최대 2장)</label>
+      <div class="photo-upload-area" onclick="document.getElementById('f-photos').click()">
+        <input type="file" id="f-photos" accept="image/*" multiple onchange="handlePhotoSelect(event)">
+        <div>📷 사진을 탭해서 선택하세요</div>
+        <div style="font-size:12px; color: var(--text-secondary); margin-top:4px;">WebP로 자동 변환됩니다</div>
+      </div>
+      <div class="photo-preview-row" id="photo-preview-row"></div>
+    </div>
+
+    <div id="edit-delete-btn" style="display:none; margin-bottom:12px;">
+      <button class="btn-danger" onclick="deleteCurrentRun()">삭제</button>
+    </div>
+    <button class="btn-primary" id="save-btn" onclick="saveRun()">저장하기</button>
+  </div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="modal-overlay" id="detail-modal-overlay" onclick="handleOverlayClick(event, 'detail-modal-overlay')">
+  <div class="modal detail-modal" id="detail-modal">
+    <div class="modal-handle"></div>
+    <div id="detail-content"></div>
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+  <img id="lightbox-img" src="" alt="">
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- FIREBASE SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+
+<script>
+// ─── COMPLETED CHECK ─────────────────────────────────────────────
+function isCompleted(run) {
+  const today = new Date().toISOString().slice(0,10);
+  return run.date <= today && run.photos && run.photos.length > 0;
+}
+
+// ─── NEON TICKER ─────────────────────────────────────────────────
+(function() {
+  const phrases = [
+    "YOUR ONLY COMPETITION IS YESTERDAY'S YOU",
+    "THE HARDEST STEP IS OUT THE DOOR",
+    "RUN NOW — REGRET NOTHING",
+    "YOU DON'T HAVE TO BE FAST. JUST GO.",
+    "MILES OF SMILES AWAIT",
+    "SWEAT TODAY. SHINE TOMORROW.",
+    "THE CITY IS YOURS AT DAWN",
+    "ONE MORE KM. ALWAYS ONE MORE.",
+    "RUN WILD. RUN FREE.",
+    "NO BAD RUN — ONLY EXCUSES"
+  ];
+  // Shuffle for variety each load
+  const shuffled = [...phrases].sort(() => Math.random() - 0.5);
+  const full = [...shuffled, ...shuffled]; // duplicate for seamless loop
+  const track = document.getElementById('neon-track');
+  full.forEach((p, i) => {
+    const span = document.createElement('span');
+    span.className = 'neon-phrase';
+    span.textContent = p;
+    track.appendChild(span);
+    if (i < full.length - 1) {
+      const sep = document.createElement('span');
+      sep.className = 'neon-sep';
+      sep.textContent = '✦';
+      track.appendChild(sep);
+    }
+  });
+})();
+
+// ─── FIREBASE INIT ───────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyAUOj_6DRIcKVivXrw0nc61zQVTZK-xyIA",
+  authDomain: "running-club-8da37.firebaseapp.com",
+  projectId: "running-club-8da37",
+  storageBucket: "running-club-8da37.firebasestorage.app",
+  messagingSenderId: "230505972475",
+  appId: "1:230505972475:web:5ae13eb1d3ba6eece7665e",
+  measurementId: "G-J7PP461K2K"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const storage = firebase.storage();
+
+// ─── STATE ───────────────────────────────────────────────────────
+let runs = [];
+let currentView = 'calendar';
+let calYear, calMonth;
+let formParticipants = [];
+let formPhotos = [];
+let editingRunId = null;
+let existingPhotos = [];
+let myNickname = localStorage.getItem('rc_nickname') || '';
+
+// ─── INIT ────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  const now = new Date();
+  calYear = now.getFullYear();
+  calMonth = now.getMonth();
+
+  const pad = n => String(n).padStart(2, '0');
+  document.getElementById('f-date').value = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+  document.getElementById('f-time').value = '07:00';
+
+  document.getElementById('f-participant-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); addParticipantToForm(); }
+  });
+  document.getElementById('f-nickname').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); confirmNickname(); }
+  });
+
+  db.collection('runs').orderBy('date', 'desc').onSnapshot(snap => {
+    runs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderAll();
+  }, err => {
+    showToast('데이터를 불러오는데 실패했어요.');
+    console.error(err);
+  });
+});
+
+// ─── NICKNAME ────────────────────────────────────────────────────
+function openAddModal() {
+  if (!myNickname) {
+    openModal('nickname-modal-overlay');
+    setTimeout(() => document.getElementById('f-nickname').focus(), 350);
+  } else {
+    openAddForm();
+  }
+}
+
+function confirmNickname() {
+  const val = document.getElementById('f-nickname').value.trim();
+  if (!val) { showToast('닉네임을 입력해주세요'); return; }
+  myNickname = val;
+  localStorage.setItem('rc_nickname', val);
+  closeModal('nickname-modal-overlay');
+  openAddForm();
+}
+
+function openAddForm() {
+  editingRunId = null;
+  existingPhotos = [];
+  formParticipants = [];
+  formPhotos = [];
+  document.getElementById('modal-title-text').textContent = '새 런 추가';
+  document.getElementById('creator-badge-display').textContent = `👑 ${myNickname} 개설`;
+  document.getElementById('f-title').value = '';
+  document.getElementById('f-location').value = '';
+  document.getElementById('f-distance').value = '';
+  document.getElementById('f-course-url').value = '';
+  document.getElementById('f-participant-chips').innerHTML = '';
+  document.getElementById('photo-preview-row').innerHTML = '';
+  document.getElementById('save-btn').textContent = '저장하기';
+
+  const now = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  document.getElementById('f-date').value = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+  document.getElementById('f-time').value = '07:00';
+
+  openModal('add-modal-overlay');
+}
+
+// ─── VIEW TOGGLE ─────────────────────────────────────────────────
+function setView(v) {
+  currentView = v;
+  document.getElementById('view-calendar').style.display = v === 'calendar' ? '' : 'none';
+  document.getElementById('view-list').style.display = v === 'list' ? '' : 'none';
+  document.getElementById('btn-cal').classList.toggle('active', v === 'calendar');
+  document.getElementById('btn-list').classList.toggle('active', v === 'list');
+  renderAll();
+}
+
+function renderAll() {
+  if (currentView === 'calendar') renderCalendar();
+  else renderList();
+}
+
+// ─── CALENDAR ────────────────────────────────────────────────────
+function changeMonth(delta) {
+  calMonth += delta;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  renderCalendar();
+}
+
+function renderCalendar() {
+  const label = new Date(calYear, calMonth, 1).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long' });
+  document.getElementById('cal-month-label').textContent = label;
+
+  const grid = document.getElementById('cal-grid');
+  const days = ['일','월','화','수','목','금','토'];
+  grid.innerHTML = days.map(d => `<div class="cal-day-label">${d}</div>`).join('');
+
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const lastDate = new Date(calYear, calMonth + 1, 0).getDate();
+  const today = new Date();
+  const runMap = {};
+  runs.forEach(r => { (runMap[r.date] = runMap[r.date] || []).push(r); });
+
+  const prevLast = new Date(calYear, calMonth, 0).getDate();
+  for (let i = firstDay - 1; i >= 0; i--) {
+    grid.innerHTML += `<div class="cal-cell other-month">${prevLast - i}</div>`;
+  }
+
+  for (let d = 1; d <= lastDate; d++) {
+    const dateStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday = today.getFullYear() === calYear && today.getMonth() === calMonth && today.getDate() === d;
+    const dow = new Date(calYear, calMonth, d).getDay();
+    const cls = ['cal-cell', isToday ? 'today' : '', dow === 0 ? 'sunday' : dow === 6 ? 'saturday' : ''].filter(Boolean).join(' ');
+    const dayRuns = runMap[dateStr] || [];
+    const dots = dayRuns.map(r => {
+      const isPast = r.date < today.toISOString().slice(0,10);
+      const comp = isCompleted(r);
+      const cls = comp ? 'completed' : isPast ? 'past' : 'upcoming';
+      return `<div class="run-dot ${cls}" title="${comp ? '완료' : ''}"></div>`;
+    }).join('');
+    grid.innerHTML += `<div class="${cls}" onclick="filterCalendarByDate('${dateStr}')">${d}${dots ? `<div class="run-dots">${dots}</div>` : ''}</div>`;
+  }
+
+  const totalCells = firstDay + lastDate;
+  const remaining = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+  for (let i = 1; i <= remaining; i++) {
+    grid.innerHTML += `<div class="cal-cell other-month">${i}</div>`;
+  }
+
+  const monthStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}`;
+  const monthRuns = runs.filter(r => r.date && r.date.startsWith(monthStr)).sort((a,b) => a.date.localeCompare(b.date));
+  renderRunsInto('cal-runs-list', monthRuns, monthRuns.length === 0 ? '이번 달 러닝 일정이 없어요' : null);
+}
+
+function filterCalendarByDate(dateStr) {
+  const dateRuns = runs.filter(r => r.date === dateStr);
+  if (dateRuns.length === 0) return;
+  if (dateRuns.length === 1) { openDetail(dateRuns[0]); return; }
+  renderRunsInto('cal-runs-list', dateRuns);
+}
+
+// ─── LIST VIEW ───────────────────────────────────────────────────
+async function renderList() {
+  const today = new Date().toISOString().slice(0,10);
+  const upcoming = runs.filter(r => r.date > today || (r.date === today && !isCompleted(r))).sort((a,b) => a.date.localeCompare(b.date));
+  const done = runs.filter(r => r.date === today && isCompleted(r));
+  const past = [...done, ...runs.filter(r => r.date < today)].sort((a,b) => b.date.localeCompare(a.date));
+
+  const heroSection = document.getElementById('hero-section');
+  if (upcoming.length > 0) {
+    const next = upcoming[0];
+    let weatherHtml = '';
+    const wx = await fetchWeatherAndDust(next.date);
+    if (wx) {
+      const di = dustIndex(wx.pm25);
+      weatherHtml = `
+        <div class="hero-weather">
+          <span>🌡 ${wx.temp}°C</span>
+          <span>🌧 ${wx.rain}%</span>
+          <span>☀️ UV ${wx.uv}</span>
+          <span>💨 ${di.icon} ${di.label}</span>
+        </div>`;
+    }
+    heroSection.innerHTML = `
+      <div class="hero-card" onclick="openDetailById('${next.id}')">
+        <div class="hero-label">다음 런</div>
+        <div class="hero-title">${esc(next.title)}</div>
+        <div class="hero-meta">
+          <span class="hero-meta-item">📅 ${formatDate(next.date)}</span>
+          ${next.time ? `<span class="hero-meta-item">🕐 ${next.time}</span>` : ''}
+          ${next.location ? `<span class="hero-meta-item">📍 ${esc(next.location)}</span>` : ''}
+          ${next.distance ? `<span class="hero-meta-item">📏 ${next.distance}km</span>` : ''}
+        </div>
+        ${weatherHtml}
+        ${next.createdBy ? `<div style="margin-top:8px;font-size:11px;opacity:0.7">👑 ${esc(next.createdBy)} 개설</div>` : ''}
+      </div>`;
+  } else {
+    heroSection.innerHTML = '';
+  }
+
+  const allList = document.getElementById('all-runs-list');
+  allList.innerHTML = '';
+  const upcomingRest = upcoming.slice(1);
+  if (upcomingRest.length > 0) {
+    allList.innerHTML += `<div class="section-title">예정된 런</div>`;
+    upcomingRest.forEach(r => allList.appendChild(buildRunCard(r)));
+  }
+  if (past.length > 0) {
+    allList.innerHTML += `<div class="section-title">지난 런</div>`;
+    past.forEach(r => allList.appendChild(buildRunCard(r)));
+  }
+  if (runs.length === 0) {
+    allList.innerHTML = `<div class="empty-state"><div class="empty-icon">🏃‍♀️</div><div class="empty-text">아직 러닝 일정이 없어요<br>+ 버튼으로 추가해보세요!</div></div>`;
+  }
+}
+
+function renderRunsInto(containerId, runsArr, emptyMsg) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = '';
+  if (runsArr.length === 0 && emptyMsg) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">📅</div><div class="empty-text">${emptyMsg}</div></div>`;
+    return;
+  }
+  runsArr.forEach(r => el.appendChild(buildRunCard(r)));
+}
+
+function buildRunCard(run) {
+  const today = new Date().toISOString().slice(0,10);
+  const completed = isCompleted(run);
+  const isPast = run.date < today || completed;
+  const card = document.createElement('div');
+  card.className = `run-card ${isPast ? 'past' : 'upcoming'}`;
+  card.onclick = () => openDetail(run);
+
+  const completedBadge = completed ? `<span class="badge badge-completed">✅ 완료</span>` : '';
+  const distanceBadge = run.distance ? `<span class="badge badge-distance">📏 ${run.distance}km</span>` : '';
+
+  let participantsHtml = '';
+  if (run.participants && run.participants.length > 0) {
+    const chips = run.participants.map(p => `<span class="chip">${esc(p)}</span>`).join('');
+    participantsHtml = `<div class="card-participants"><div class="participant-label">👭 참여자 ${run.participants.length}명</div><div class="participant-chips">${chips}</div></div>`;
+  }
+
+  let photosHtml = '';
+  if (run.photos && run.photos.length > 0) {
+    const thumbs = run.photos.map(url => `<img class="photo-thumb" src="${url}" onclick="event.stopPropagation(); openLightbox('${url}')">`).join('');
+    photosHtml = `<div class="card-photos">${thumbs}</div>`;
+  }
+
+  const creatorHtml = run.createdBy ? `<div class="card-creator">👑 ${esc(run.createdBy)} 개설</div>` : '';
+
+  card.innerHTML = `
+    <div class="card-header">
+      <div class="card-title">${esc(run.title || '제목 없음')}</div>
+      <div class="card-badges">${completedBadge}${distanceBadge}</div>
+    </div>
+    <div class="card-meta">
+      ${run.date ? `<span class="meta-item">📅 ${formatDate(run.date)}</span>` : ''}
+      ${run.time ? `<span class="meta-item">🕐 ${run.time}</span>` : ''}
+      ${run.location ? `<span class="meta-item">📍 ${esc(run.location)}</span>` : ''}
+    </div>
+    ${creatorHtml}
+    ${participantsHtml}
+    ${photosHtml}`;
+
+  return card;
+}
+
+// ─── DETAIL MODAL ────────────────────────────────────────────────
+async function openDetailById(id) {
+  const run = runs.find(r => r.id === id);
+  if (run) openDetail(run);
+}
+
+async function openDetail(run) {
+  const detail = document.getElementById('detail-content');
+  detail.innerHTML = `
+    <div class="detail-hero">
+      <div class="detail-title">${esc(run.title || '제목 없음')}</div>
+      <div class="card-meta">
+        ${run.date ? `<span class="meta-item" style="color:rgba(255,255,255,0.9)">📅 ${formatDate(run.date)}</span>` : ''}
+        ${run.time ? `<span class="meta-item" style="color:rgba(255,255,255,0.9)">🕐 ${run.time}</span>` : ''}
+      </div>
+      ${run.createdBy ? `<div style="margin-top:8px;font-size:12px;opacity:0.75">👑 ${esc(run.createdBy)} 개설</div>` : ''}
+    </div>
+    <div id="detail-body" style="padding: 0 0 8px"></div>`;
+
+  openModal('detail-modal-overlay');
+
+  const body = document.getElementById('detail-body');
+
+  // Info section
+  let infoHtml = '<div class="detail-section"><div class="detail-section-title">정보</div><div class="detail-info-grid">';
+  if (run.location) infoHtml += `<div class="detail-info-item"><span class="detail-info-icon">📍</span><span class="detail-info-text"><a href="https://map.kakao.com/link/search/${encodeURIComponent(run.location)}" target="_blank">${esc(run.location)}</a></span></div>`;
+  if (run.distance) infoHtml += `<div class="detail-info-item"><span class="detail-info-icon">📏</span><span class="detail-info-text">${run.distance}km</span></div>`;
+  if (run.courseUrl) infoHtml += `<div class="detail-info-item"><span class="detail-info-icon">🗺️</span><span class="detail-info-text"><a href="${esc(run.courseUrl)}" target="_blank">코스 보기</a></span></div>`;
+  infoHtml += '</div></div>';
+  body.innerHTML += infoHtml;
+
+  // Weather + Dust section
+  const wx = await fetchWeatherAndDust(run.date);
+  if (wx) {
+    const di = dustIndex(wx.pm25);
+    const pm10di = dustIndexPM10(wx.pm10);
+    body.innerHTML += `
+      <div class="detail-section">
+        <div class="detail-section-title">날씨 & 대기환경</div>
+        <div class="weather-grid">
+          <div class="weather-card"><div class="weather-icon">🌡</div><div class="weather-value">${wx.temp}°C</div><div class="weather-label">기온</div></div>
+          <div class="weather-card"><div class="weather-icon">🌧</div><div class="weather-value">${wx.rain}%</div><div class="weather-label">강수확률</div></div>
+          <div class="weather-card"><div class="weather-icon">☀️</div><div class="weather-value">${wx.uv}</div><div class="weather-label">UV 지수</div></div>
+          <div class="weather-card"><div class="weather-icon">💨</div><div class="weather-value">${wx.pm25}</div><div class="weather-label">PM2.5</div></div>
+        </div>
+        <div class="dust-index" style="margin-top:10px">
+          <div class="dust-index-label">미세먼지 (PM2.5 · PM10: ${wx.pm10}㎍/㎥)</div>
+          <div class="dust-index-badge">${di.icon} ${di.label} — ${di.desc}</div>
+        </div>
+      </div>`;
+  }
+
+  // Participants
+  if (run.participants && run.participants.length > 0) {
+    const chips = run.participants.map(p =>
+      `<span class="chip">${esc(p)}<button class="chip-remove" onclick="removeParticipantFromRun('${run.id}', '${esc(p)}')">×</button></span>`
+    ).join('');
+    body.innerHTML += `
+      <div class="detail-section">
+        <div class="detail-section-title">참여자 (${run.participants.length}명)</div>
+        <div class="participant-chips">${chips}</div>
+      </div>`;
+  }
+
+  body.innerHTML += `
+    <div class="detail-section">
+      <div class="participant-input-row">
+        <input type="text" class="form-input" id="detail-participant-input" placeholder="이름 추가" style="font-size:14px;">
+        <button class="btn-add" onclick="addParticipantToRun('${run.id}')">＋</button>
+      </div>
+    </div>`;
+
+  document.getElementById('detail-participant-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); addParticipantToRun(run.id); }
+  });
+
+  if (run.photos && run.photos.length > 0) {
+    const imgs = run.photos.map(url => `<img class="gallery-img" src="${url}" onclick="openLightbox('${url}')">`).join('');
+    body.innerHTML += `<div class="detail-section"><div class="detail-section-title">사진</div><div class="photo-gallery">${imgs}</div></div>`;
+  }
+
+  body.innerHTML += `<div style="margin-top:20px; display:flex; gap:10px;">
+    <button class="btn-primary" style="flex:1" onclick="closeModal('detail-modal-overlay'); openEditModal('${run.id}')">✏️ 수정하기</button>
+  </div>`;
+}
+
+// ─── EDIT MODAL ──────────────────────────────────────────────────
+function openEditModal(id) {
+  const run = runs.find(r => r.id === id);
+  if (!run) return;
+  editingRunId = id;
+  existingPhotos = run.photos ? [...run.photos] : [];
+  formParticipants = run.participants ? [...run.participants] : [];
+  formPhotos = [];
+
+  document.getElementById('modal-title-text').textContent = '런 수정';
+  document.getElementById('creator-badge-display').textContent = run.createdBy ? `👑 ${run.createdBy} 개설` : '';
+  document.getElementById('f-title').value = run.title || '';
+  document.getElementById('f-date').value = run.date || '';
+  document.getElementById('f-time').value = run.time || '';
+  document.getElementById('f-location').value = run.location || '';
+  document.getElementById('f-distance').value = run.distance || '';
+  document.getElementById('f-course-url').value = run.courseUrl || '';
+  document.getElementById('save-btn').textContent = '수정 저장';
+  document.getElementById('edit-delete-btn').style.display = 'block';
+
+  renderFormParticipants();
+
+  const previewRow = document.getElementById('photo-preview-row');
+  previewRow.innerHTML = existingPhotos.map((url, i) => `
+    <div class="photo-preview-item">
+      <img src="${url}">
+      <button class="photo-remove" onclick="removeExistingPhoto(${i})">✕</button>
+    </div>`).join('');
+
+  openModal('add-modal-overlay');
+}
+
+function removeExistingPhoto(i) {
+  existingPhotos.splice(i, 1);
+  const previewRow = document.getElementById('photo-preview-row');
+  const existingItems = previewRow.querySelectorAll('.photo-preview-item');
+  existingItems[i] && existingItems[i].remove();
+}
+
+// ─── SAVE ────────────────────────────────────────────────────────
+async function saveRun() {
+  const title = document.getElementById('f-title').value.trim();
+  const date = document.getElementById('f-date').value;
+  if (!title || !date) { showToast('제목과 날짜는 필수예요!'); return; }
+
+  const btn = document.getElementById('save-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> 저장 중...';
+
+  try {
+    const uploadedUrls = [];
+    const runId = editingRunId || db.collection('runs').doc().id;
+
+    for (const photo of formPhotos) {
+      const ref = storage.ref(`photos/${runId}/${Date.now()}_${Math.random().toString(36).slice(2)}.webp`);
+      await ref.put(photo.blob, { contentType: 'image/webp' });
+      const url = await ref.getDownloadURL();
+      uploadedUrls.push(url);
+    }
+
+    const allPhotos = [...existingPhotos, ...uploadedUrls];
+
+    const data = {
+      title,
+      date,
+      time: document.getElementById('f-time').value,
+      location: document.getElementById('f-location').value.trim(),
+      distance: parseFloat(document.getElementById('f-distance').value) || null,
+      courseUrl: document.getElementById('f-course-url').value.trim(),
+      participants: formParticipants,
+      photos: allPhotos,
+    };
+    Object.keys(data).forEach(k => (data[k] === null || data[k] === '') && delete data[k]);
+
+    if (editingRunId) {
+      await db.collection('runs').doc(editingRunId).update(data);
+      showToast('런이 수정됐어요 ✅');
+    } else {
+      data.createdBy = myNickname || '';
+      data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+      await db.collection('runs').doc(runId).set(data);
+      showToast('런이 추가됐어요 🏃‍♀️');
+    }
+    closeModal('add-modal-overlay');
+  } catch (e) {
+    console.error(e);
+    showToast('저장에 실패했어요. 다시 시도해주세요.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = editingRunId ? '수정 저장' : '저장하기';
+  }
+}
+
+// ─── DELETE ──────────────────────────────────────────────────────
+async function deleteCurrentRun() {
+  if (!editingRunId) return;
+  if (!confirm('정말 이 런을 삭제할까요?')) return;
+  try {
+    await db.collection('runs').doc(editingRunId).delete();
+    showToast('런이 삭제됐어요');
+    closeModal('add-modal-overlay');
+  } catch (e) { showToast('삭제에 실패했어요.'); }
+}
+
+// ─── PARTICIPANTS ─────────────────────────────────────────────────
+function addParticipantToForm() {
+  const input = document.getElementById('f-participant-input');
+  const name = input.value.trim();
+  if (!name || formParticipants.includes(name)) { input.value = ''; return; }
+  formParticipants.push(name);
+  input.value = '';
+  renderFormParticipants();
+}
+
+function removeFormParticipant(name) {
+  formParticipants = formParticipants.filter(p => p !== name);
+  renderFormParticipants();
+}
+
+function renderFormParticipants() {
+  document.getElementById('f-participant-chips').innerHTML = formParticipants.map(p =>
+    `<span class="chip">${esc(p)}<button class="chip-remove" onclick="removeFormParticipant('${esc(p)}')">×</button></span>`
+  ).join('');
+}
+
+async function addParticipantToRun(runId) {
+  const input = document.getElementById('detail-participant-input');
+  const name = input.value.trim();
+  if (!name) return;
+  const run = runs.find(r => r.id === runId);
+  if (!run) return;
+  const current = run.participants || [];
+  if (current.includes(name)) { input.value = ''; showToast('이미 있는 이름이에요'); return; }
+  try {
+    await db.collection('runs').doc(runId).update({ participants: [...current, name] });
+    input.value = '';
+    showToast(`${name} 추가됐어요 👋`);
+    closeModal('detail-modal-overlay');
+    setTimeout(() => { const updated = runs.find(r => r.id === runId); if (updated) openDetail(updated); }, 300);
+  } catch(e) { showToast('추가에 실패했어요.'); }
+}
+
+async function removeParticipantFromRun(runId, name) {
+  const run = runs.find(r => r.id === runId);
+  if (!run) return;
+  try {
+    await db.collection('runs').doc(runId).update({ participants: (run.participants || []).filter(p => p !== name) });
+    showToast(`${name} 제거됐어요`);
+    closeModal('detail-modal-overlay');
+    setTimeout(() => { const updated = runs.find(r => r.id === runId); if (updated) openDetail(updated); }, 300);
+  } catch(e) { showToast('제거에 실패했어요.'); }
+}
+
+// ─── PHOTO UPLOAD ─────────────────────────────────────────────────
+function handlePhotoSelect(e) {
+  const files = Array.from(e.target.files);
+  const remaining = 2 - existingPhotos.length - formPhotos.length;
+  if (remaining <= 0) { showToast('사진은 최대 2장까지 올릴 수 있어요'); return; }
+  files.slice(0, remaining).forEach(file => convertToWebp(file));
+  e.target.value = '';
+}
+
+function convertToWebp(file) {
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const MAX = 1200;
+      let { width, height } = img;
+      if (width > MAX || height > MAX) {
+        if (width > height) { height = Math.round(height * MAX / width); width = MAX; }
+        else { width = Math.round(width * MAX / height); height = MAX; }
+      }
+      canvas.width = width; canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      canvas.toBlob(blob => {
+        const dataUrl = canvas.toDataURL('image/webp', 0.85);
+        formPhotos.push({ file, dataUrl, blob });
+        renderPhotoPreview();
+      }, 'image/webp', 0.85);
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function renderPhotoPreview() {
+  const row = document.getElementById('photo-preview-row');
+  row.querySelectorAll('.photo-preview-item[data-type="new"]').forEach(el => el.remove());
+  formPhotos.forEach((p, i) => {
+    const div = document.createElement('div');
+    div.className = 'photo-preview-item';
+    div.dataset.type = 'new';
+    div.innerHTML = `<img src="${p.dataUrl}"><button class="photo-remove" onclick="removeNewPhoto(${i})">✕</button>`;
+    row.appendChild(div);
+  });
+}
+
+function removeNewPhoto(i) {
+  formPhotos.splice(i, 1);
+  renderPhotoPreview();
+}
+
+// ─── WEATHER + DUST ──────────────────────────────────────────────
+const wxCache = {};
+
+async function fetchWeatherAndDust(dateStr) {
+  if (!dateStr) return null;
+  if (wxCache[dateStr]) return wxCache[dateStr];
+
+  const today = new Date();
+  const target = new Date(dateStr);
+  const diffDays = Math.round((target - today) / 86400000);
+  if (diffDays < -1 || diffDays > 15) return null;
+
+  try {
+    const [wxRes, dustRes] = await Promise.all([
+      fetch(`https://api.open-meteo.com/v1/forecast?latitude=37.5665&longitude=126.9780&daily=temperature_2m_max,precipitation_probability_max,uv_index_max&timezone=Asia/Seoul&start_date=${dateStr}&end_date=${dateStr}`),
+      fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=37.5665&longitude=126.9780&hourly=pm10,pm2_5&timezone=Asia/Seoul&start_date=${dateStr}&end_date=${dateStr}`)
+    ]);
+    const wxJson = await wxRes.json();
+    const dustJson = await dustRes.json();
+    if (!wxJson.daily) return null;
+
+    // Average daytime PM values (hours 6–18)
+    const pm25Arr = (dustJson.hourly?.pm2_5 || []).slice(6, 18).filter(v => v != null);
+    const pm10Arr = (dustJson.hourly?.pm10 || []).slice(6, 18).filter(v => v != null);
+    const avg = arr => arr.length ? Math.round(arr.reduce((a,b) => a+b, 0) / arr.length) : null;
+
+    const data = {
+      temp: Math.round(wxJson.daily.temperature_2m_max[0]),
+      rain: wxJson.daily.precipitation_probability_max[0] ?? 0,
+      uv: Math.round(wxJson.daily.uv_index_max[0] ?? 0),
+      pm25: avg(pm25Arr) ?? '–',
+      pm10: avg(pm10Arr) ?? '–',
+    };
+    wxCache[dateStr] = data;
+    return data;
+  } catch { return null; }
+}
+
+function dustIndex(pm25) {
+  if (pm25 === '–' || pm25 === null) return { icon: '❓', label: '정보없음', desc: '데이터를 가져올 수 없어요' };
+  if (pm25 <= 15)  return { icon: '🟢', label: '좋음',     desc: '맑은 공기 — 달리기 최적!' };
+  if (pm25 <= 35)  return { icon: '🟡', label: '보통',     desc: '마스크 없이 가능하지만 예민하다면 주의' };
+  if (pm25 <= 75)  return { icon: '🟠', label: '나쁨',     desc: '마스크 착용 권장' };
+  return              { icon: '🔴', label: '매우나쁨', desc: '야외 활동 자제 권장' };
+}
+
+function dustIndexPM10(pm10) {
+  if (pm10 === '–' || pm10 === null) return { icon: '❓', label: '정보없음' };
+  if (pm10 <= 30)  return { icon: '🟢', label: '좋음' };
+  if (pm10 <= 80)  return { icon: '🟡', label: '보통' };
+  if (pm10 <= 150) return { icon: '🟠', label: '나쁨' };
+  return              { icon: '🔴', label: '매우나쁨' };
+}
+
+// ─── MODALS ──────────────────────────────────────────────────────
+function openModal(overlayId) {
+  document.getElementById(overlayId).classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeModal(overlayId) {
+  document.getElementById(overlayId).classList.remove('open');
+  document.body.style.overflow = '';
+}
+function handleOverlayClick(e, overlayId) {
+  if (e.target.id === overlayId) closeModal(overlayId);
+}
+
+// ─── LIGHTBOX ────────────────────────────────────────────────────
+function openLightbox(url) {
+  document.getElementById('lightbox-img').src = url;
+  document.getElementById('lightbox').classList.add('open');
+}
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('open');
+}
+
+// ─── HELPERS ─────────────────────────────────────────────────────
+function showToast(msg, duration = 2500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+function formatDate(str) {
+  if (!str) return '';
+  const d = new Date(str + 'T00:00:00');
+  return d.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' });
+}
+
+function esc(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+</script>
+</body>
+</html>
