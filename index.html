@@ -715,14 +715,15 @@ async function renderList() {
   if (upcoming.length > 0) {
     const next = upcoming[0];
     let weatherHtml = '';
-    const wx = await fetchWeatherAndDust(next.date);
+    const wx = await fetchWeatherAndDust(next.date, next.time);
     if (wx) {
       const di = dustIndex(wx.pm25);
+      const wc = weatherCondition(wx.weatherCode);
       weatherHtml = `
         <div class="hero-weather">
+          <span>${wc.icon} ${wc.label}</span>
           <span>🌡 ${wx.temp}°C</span>
           <span>🌧 ${wx.rain}%</span>
-          <span>☀️ UV ${wx.uv}</span>
           <span>💨 ${di.icon} ${di.label}</span>
         </div>`;
     }
@@ -843,18 +844,20 @@ async function openDetail(run) {
   body.innerHTML += infoHtml;
 
   // Weather + Dust section
-  const wx = await fetchWeatherAndDust(run.date);
+  const wx = await fetchWeatherAndDust(run.date, run.time);
   if (wx) {
     const di = dustIndex(wx.pm25);
     const pm10di = dustIndexPM10(wx.pm10);
+    const wc = weatherCondition(wx.weatherCode);
+    const timeLabel = run.time ? ` (${run.time} 기준)` : '';
     body.innerHTML += `
       <div class="detail-section">
-        <div class="detail-section-title">날씨 & 대기환경</div>
+        <div class="detail-section-title">날씨 & 대기환경${timeLabel}</div>
         <div class="weather-grid">
+          <div class="weather-card"><div class="weather-icon">${wc.icon}</div><div class="weather-value" style="font-size:12px">${wc.label}</div><div class="weather-label">날씨</div></div>
           <div class="weather-card"><div class="weather-icon">🌡</div><div class="weather-value">${wx.temp}°C</div><div class="weather-label">기온</div></div>
           <div class="weather-card"><div class="weather-icon">🌧</div><div class="weather-value">${wx.rain}%</div><div class="weather-label">강수확률</div></div>
           <div class="weather-card"><div class="weather-icon">☀️</div><div class="weather-value">${wx.uv}</div><div class="weather-label">UV 지수</div></div>
-          <div class="weather-card"><div class="weather-icon">💨</div><div class="weather-value">${wx.pm25}</div><div class="weather-label">PM2.5</div></div>
         </div>
         <div class="dust-index" style="margin-top:10px">
           <div class="dust-index-label">미세먼지 (PM2.5 · PM10: ${wx.pm10}㎍/㎥)</div>
@@ -1104,39 +1107,54 @@ function removeNewPhoto(i) {
 // ─── WEATHER + DUST ──────────────────────────────────────────────
 const wxCache = {};
 
-async function fetchWeatherAndDust(dateStr) {
+async function fetchWeatherAndDust(dateStr, timeStr) {
   if (!dateStr) return null;
-  if (wxCache[dateStr]) return wxCache[dateStr];
+  const cacheKey = `${dateStr}_${timeStr || ''}`;
+  if (wxCache[cacheKey]) return wxCache[cacheKey];
 
   const today = new Date();
   const target = new Date(dateStr);
   const diffDays = Math.round((target - today) / 86400000);
   if (diffDays < -1 || diffDays > 15) return null;
 
+  const hour = timeStr ? parseInt(timeStr.split(':')[0], 10) : 7;
+
   try {
     const [wxRes, dustRes] = await Promise.all([
-      fetch(`https://api.open-meteo.com/v1/forecast?latitude=37.5665&longitude=126.9780&daily=temperature_2m_max,precipitation_probability_max,uv_index_max&timezone=Asia/Seoul&start_date=${dateStr}&end_date=${dateStr}`),
+      fetch(`https://api.open-meteo.com/v1/forecast?latitude=37.5665&longitude=126.9780&hourly=temperature_2m,precipitation_probability,weathercode,uv_index&timezone=Asia/Seoul&start_date=${dateStr}&end_date=${dateStr}`),
       fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=37.5665&longitude=126.9780&hourly=pm10,pm2_5&timezone=Asia/Seoul&start_date=${dateStr}&end_date=${dateStr}`)
     ]);
     const wxJson = await wxRes.json();
     const dustJson = await dustRes.json();
-    if (!wxJson.daily) return null;
+    if (!wxJson.hourly) return null;
 
-    // Average daytime PM values (hours 6–18)
     const pm25Arr = (dustJson.hourly?.pm2_5 || []).slice(6, 18).filter(v => v != null);
     const pm10Arr = (dustJson.hourly?.pm10 || []).slice(6, 18).filter(v => v != null);
     const avg = arr => arr.length ? Math.round(arr.reduce((a,b) => a+b, 0) / arr.length) : null;
 
     const data = {
-      temp: Math.round(wxJson.daily.temperature_2m_max[0]),
-      rain: wxJson.daily.precipitation_probability_max[0] ?? 0,
-      uv: Math.round(wxJson.daily.uv_index_max[0] ?? 0),
+      temp: Math.round(wxJson.hourly.temperature_2m[hour] ?? 0),
+      rain: wxJson.hourly.precipitation_probability[hour] ?? 0,
+      uv: Math.round(wxJson.hourly.uv_index[hour] ?? 0),
+      weatherCode: wxJson.hourly.weathercode[hour] ?? 0,
       pm25: avg(pm25Arr) ?? '–',
       pm10: avg(pm10Arr) ?? '–',
     };
-    wxCache[dateStr] = data;
+    wxCache[cacheKey] = data;
     return data;
   } catch { return null; }
+}
+
+function weatherCondition(code) {
+  if (code === 0)  return { icon: '☀️', label: '맑음' };
+  if (code <= 2)   return { icon: '🌤', label: '구름 조금' };
+  if (code === 3)  return { icon: '☁️', label: '흐림' };
+  if (code <= 48)  return { icon: '🌫', label: '안개' };
+  if (code <= 55)  return { icon: '🌦', label: '이슬비' };
+  if (code <= 65)  return { icon: '🌧', label: '비' };
+  if (code <= 75)  return { icon: '❄️', label: '눈' };
+  if (code <= 82)  return { icon: '🌦', label: '소나기' };
+  return            { icon: '⛈', label: '뇌우' };
 }
 
 function dustIndex(pm25) {
