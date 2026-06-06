@@ -1,0 +1,37 @@
+rules_version = '2';
+
+// 한강런 클럽 — Firestore 보안 규칙
+// 모델: 로그인은 없지만 모든 클라이언트는 익명 인증을 거친다.
+//   → 인증되지 않은(REST/봇) 직접 접근을 차단하고, 데이터 형태·크기를 검증한다.
+// 주의: 익명 인증이라 "내 글만 수정" 같은 소유권 제어는 불가능하다(공용 화이트보드 모델).
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidRun(d) {
+      return d.keys().hasOnly(['title','date','time','location','distance','courseUrl','participants','photos','createdBy','createdAt'])
+        && d.title is string && d.title.size() > 0 && d.title.size() <= 100
+        && d.date is string && d.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && (!('time' in d)        || (d.time is string && d.time.size() <= 5))
+        && (!('location' in d)    || (d.location is string && d.location.size() <= 200))
+        && (!('distance' in d)    || (d.distance is number && d.distance >= 0 && d.distance <= 1000))
+        && (!('courseUrl' in d)   || (d.courseUrl is string && d.courseUrl.size() <= 500))
+        && (!('participants' in d)|| (d.participants is list && d.participants.size() <= 100))
+        && (!('photos' in d)      || (d.photos is list && d.photos.size() <= 2))
+        && (!('createdBy' in d)   || (d.createdBy is string && d.createdBy.size() <= 50));
+    }
+
+    match /runs/{runId} {
+      allow read:   if isSignedIn();
+      allow create: if isSignedIn() && isValidRun(request.resource.data);
+      allow update: if isSignedIn() && isValidRun(request.resource.data);
+      allow delete: if isSignedIn();
+    }
+
+    // 그 외 모든 경로는 기본 거부.
+  }
+}

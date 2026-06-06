@@ -495,6 +495,7 @@
 
 <!-- FIREBASE SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 
@@ -550,6 +551,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const storage = firebase.storage();
+const auth = firebase.auth();
 
 // ─── STATE ───────────────────────────────────────────────────────
 let runs = [];
@@ -578,6 +580,17 @@ window.addEventListener('DOMContentLoaded', () => {
     if (e.key === 'Enter') { e.preventDefault(); confirmNickname(); }
   });
 
+  // 보안 규칙이 인증을 요구하므로, 백그라운드 익명 로그인 후 데이터에 연결한다.
+  // 사용자는 로그인 화면을 보지 않는다.
+  auth.signInAnonymously()
+    .then(startRunsListener)
+    .catch(err => {
+      console.error('익명 인증 실패:', err);
+      showToast('접속에 실패했어요. 브라우저의 쿠키/저장소 차단을 해제하고 새로고침해주세요.', 5000);
+    });
+});
+
+function startRunsListener() {
   db.collection('runs').orderBy('date', 'desc').onSnapshot(snap => {
     runs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     renderAll();
@@ -585,7 +598,7 @@ window.addEventListener('DOMContentLoaded', () => {
     showToast('데이터를 불러오는데 실패했어요.');
     console.error(err);
   });
-});
+}
 
 // ─── NICKNAME ────────────────────────────────────────────────────
 function openAddModal() {
