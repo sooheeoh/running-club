@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>🏃‍♀️ 한강런 클럽</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -335,23 +338,22 @@
   .neon-phrase {
     display: inline-block;
     font-size: 13px;
-    font-weight: 900;
     font-style: italic;
-    letter-spacing: 0.3px;
     text-transform: uppercase;
+    letter-spacing: 0.3px;
     color: #39FF8F;
     text-shadow: 0 0 8px #39FF8F, 0 0 18px #39FF8F, 0 0 32px #1aff70;
-    padding: 0 26px;
-    font-family: 'Arial Black', 'Archivo Black', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+    padding: 0 24px;
+    font-family: 'Archivo Black', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
   }
   .neon-sep {
     display: inline-block;
     color: #FF2D78;
     text-shadow: 0 0 8px #FF2D78, 0 0 18px #FF2D78;
     font-size: 13px;
-    font-family: 'Arial Black', 'Archivo Black', -apple-system, BlinkMacSystemFont, sans-serif;
-    font-weight: 900;
-    padding: 0 4px;
+    font-style: italic;
+    font-family: 'Archivo Black', sans-serif;
+    padding: 0 6px;
   }
 </style>
 </head>
@@ -545,24 +547,24 @@ function tickerPhrases() {
   const thisWeek = upcoming.filter(r => r.date <= weekStr).length;
   if (thisWeek > 0) dynamic.push(`You have ${thisWeek} run${thisWeek > 1 ? 's' : ''} this week`);
 
-  // 2) 다음 런까지 카운트다운
+  // 2) 다음 런까지 카운트다운 (today / tomorrow / in N days)
   if (upcoming.length) {
     const next = upcoming[0];
     const diff = Math.round((new Date(next.date) - new Date(todayStr)) / 86400000);
     const when = diff <= 0 ? 'is today' : diff === 1 ? 'is tomorrow' : `in ${diff} days`;
-    dynamic.push(`Next run ${when} — ${next.title}`);
+    dynamic.push(`Next run ${when} · ${next.title}`);
   }
 
   // 3) 이번 달 완료한 런 수
   const doneThisMonth = (runs || []).filter(r => isCompleted(r) && r.date.startsWith(monthStr)).length;
-  if (doneThisMonth > 0) dynamic.push(`${doneThisMonth} run${doneThisMonth > 1 ? 's' : ''} crushed this month`);
+  if (doneThisMonth > 0) dynamic.push(`${doneThisMonth} run${doneThisMonth > 1 ? 's' : ''} done this month`);
 
   // evergreen — 데이터가 없어도 전광판이 비지 않도록 항상 채워준다.
   const evergreen = [
     'Lace up — the Hangang is waiting',
-    'Snap a photo to log your run',
+    'Snap a photo after your run',
     'Invite a friend to your next run',
-    'Plan a run — tap the + button',
+    'Plan a run — tap the +',
   ];
 
   const phrases = [...dynamic, ...evergreen];
