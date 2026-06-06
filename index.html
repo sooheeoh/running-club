@@ -541,10 +541,13 @@ function tickerPhrases() {
 
   const dynamic = [];
 
-  // 1) 이번 주(앞으로 7일) 예정된 런 수
-  const week = new Date(); week.setDate(week.getDate() + 7);
-  const weekStr = week.toISOString().slice(0,10);
-  const thisWeek = upcoming.filter(r => r.date <= weekStr).length;
+  // 1) 이번 주(월~일) 예정된 런 수 — 오늘 ~ 이번 주 일요일까지
+  const todayDate = new Date(todayStr);
+  const daysToSunday = (7 - todayDate.getUTCDay()) % 7; // 일요일(0)이면 오늘이 주의 끝
+  const weekEnd = new Date(todayDate);
+  weekEnd.setUTCDate(todayDate.getUTCDate() + daysToSunday);
+  const weekEndStr = weekEnd.toISOString().slice(0,10);
+  const thisWeek = upcoming.filter(r => r.date <= weekEndStr).length;
   if (thisWeek > 0) dynamic.push(`You have ${thisWeek} run${thisWeek > 1 ? 's' : ''} this week`);
 
   // 2) 다음 런까지 카운트다운 (today / tomorrow / in N days)
