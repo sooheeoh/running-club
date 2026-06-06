@@ -100,6 +100,16 @@
   .card-meta { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 8px; }
   .meta-item { display: flex; align-items: center; gap: 4px; font-size: 13px; color: var(--text-secondary); }
   .card-creator { margin-top: 6px; font-size: 11px; color: var(--text-secondary); }
+  .card-desc {
+    margin-top: 10px; padding: 10px 12px; background: var(--primary-light);
+    border-left: 3px solid var(--primary); border-radius: 8px;
+    font-size: 13px; line-height: 1.45; color: var(--text); white-space: pre-wrap;
+  }
+  .detail-desc {
+    padding: 14px 16px; background: var(--primary-light);
+    border-left: 3px solid var(--primary); border-radius: 12px;
+    font-size: 15px; line-height: 1.5; color: var(--text); white-space: pre-wrap;
+  }
   .card-participants { margin-top: 10px; }
   .participant-label { font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; }
   .participant-chips { display: flex; flex-wrap: wrap; gap: 4px; }
@@ -324,21 +334,23 @@
   }
   .neon-phrase {
     display: inline-block;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 1.5px;
+    font-size: 13px;
+    font-weight: 900;
+    font-style: italic;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
     color: #39FF8F;
     text-shadow: 0 0 8px #39FF8F, 0 0 18px #39FF8F, 0 0 32px #1aff70;
-    padding: 0 28px;
-    font-family: 'Courier New', Courier, monospace;
+    padding: 0 26px;
+    font-family: 'Arial Black', 'Archivo Black', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
   }
   .neon-sep {
     display: inline-block;
     color: #FF2D78;
     text-shadow: 0 0 8px #FF2D78, 0 0 18px #FF2D78;
-    font-size: 11px;
-    font-family: 'Courier New', Courier, monospace;
-    font-weight: 700;
+    font-size: 13px;
+    font-family: 'Arial Black', 'Archivo Black', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-weight: 900;
     padding: 0 4px;
   }
 </style>
@@ -414,7 +426,7 @@
 
     <div class="modal-section">
       <label class="form-label">런 제목 / 별칭 *</label>
-      <input type="text" class="form-input" id="f-title" placeholder="예: 어린이대공원 붕어빵런">
+      <input type="text" class="form-input" id="f-title" placeholder="예: 어린이대공원 붕어빵런" maxlength="100">
     </div>
     <div class="modal-section form-row">
       <div>
@@ -437,6 +449,14 @@
     <div class="modal-section">
       <label class="form-label">코스 URL (선택)</label>
       <input type="url" class="form-input" id="f-course-url" placeholder="https://...">
+    </div>
+    <div class="modal-section">
+      <label class="form-label">설명 (선택)</label>
+      <textarea class="form-input" id="f-description" rows="2" maxlength="60"
+        style="resize:none; line-height:1.45;"
+        placeholder="예: 이번 런은 슬로우로 진행합니다. 최대 페이스 6분 30초! 끝나고 치맥 ㄱㄱ임!!"
+        oninput="updateDescCount()"></textarea>
+      <div id="desc-count" style="text-align:right; font-size:11px; color:var(--text-secondary); margin-top:4px;">0/60</div>
     </div>
     <div class="modal-section">
       <label class="form-label">참여자</label>
@@ -507,23 +527,58 @@ function isCompleted(run) {
 }
 
 // ─── NEON TICKER ─────────────────────────────────────────────────
-(function() {
-  const phrases = [
-    "YOUR ONLY COMPETITION IS YESTERDAY'S YOU",
-    "THE HARDEST STEP IS OUT THE DOOR",
-    "RUN NOW — REGRET NOTHING",
-    "YOU DON'T HAVE TO BE FAST. JUST GO.",
-    "MILES OF SMILES AWAIT",
-    "SWEAT TODAY. SHINE TOMORROW.",
-    "THE CITY IS YOURS AT DAWN",
-    "ONE MORE KM. ALWAYS ONE MORE.",
-    "RUN WILD. RUN FREE.",
-    "NO BAD RUN — ONLY EXCUSES"
+// 실데이터 기반의 실용 문장 + 항상 보여줄 evergreen 문장을 섞는다.
+let _tickerLast = '';
+
+function tickerPhrases() {
+  const todayStr = new Date().toISOString().slice(0,10);
+  const monthStr = todayStr.slice(0,7);
+  const upcoming = (runs || [])
+    .filter(r => r.date > todayStr || (r.date === todayStr && !isCompleted(r)))
+    .sort((a,b) => a.date.localeCompare(b.date));
+
+  const dynamic = [];
+
+  // 1) 이번 주(앞으로 7일) 예정된 런 수
+  const week = new Date(); week.setDate(week.getDate() + 7);
+  const weekStr = week.toISOString().slice(0,10);
+  const thisWeek = upcoming.filter(r => r.date <= weekStr).length;
+  if (thisWeek > 0) dynamic.push(`You have ${thisWeek} run${thisWeek > 1 ? 's' : ''} this week`);
+
+  // 2) 다음 런까지 카운트다운
+  if (upcoming.length) {
+    const next = upcoming[0];
+    const diff = Math.round((new Date(next.date) - new Date(todayStr)) / 86400000);
+    const when = diff <= 0 ? 'is today' : diff === 1 ? 'is tomorrow' : `in ${diff} days`;
+    dynamic.push(`Next run ${when} — ${next.title}`);
+  }
+
+  // 3) 이번 달 완료한 런 수
+  const doneThisMonth = (runs || []).filter(r => isCompleted(r) && r.date.startsWith(monthStr)).length;
+  if (doneThisMonth > 0) dynamic.push(`${doneThisMonth} run${doneThisMonth > 1 ? 's' : ''} crushed this month`);
+
+  // evergreen — 데이터가 없어도 전광판이 비지 않도록 항상 채워준다.
+  const evergreen = [
+    'Lace up — the Hangang is waiting',
+    'Snap a photo to log your run',
+    'Invite a friend to your next run',
+    'Plan a run — tap the + button',
   ];
-  // Shuffle for variety each load
-  const shuffled = [...phrases].sort(() => Math.random() - 0.5);
-  const full = [...shuffled, ...shuffled]; // duplicate for seamless loop
+
+  const phrases = [...dynamic, ...evergreen];
+  return phrases.length >= 4 ? phrases : [...phrases, ...evergreen];
+}
+
+function renderTicker() {
   const track = document.getElementById('neon-track');
+  if (!track) return;
+  const phrases = tickerPhrases();
+  const key = phrases.join('|');
+  if (key === _tickerLast) return; // 내용이 같으면 애니메이션을 다시 시작하지 않는다.
+  _tickerLast = key;
+
+  const full = [...phrases, ...phrases]; // 끊김 없는 루프를 위해 복제
+  track.innerHTML = '';
   full.forEach((p, i) => {
     const span = document.createElement('span');
     span.className = 'neon-phrase';
@@ -536,7 +591,7 @@ function isCompleted(run) {
       track.appendChild(sep);
     }
   });
-})();
+}
 
 // ─── FIREBASE INIT ───────────────────────────────────────────────
 const firebaseConfig = {
@@ -572,6 +627,8 @@ window.addEventListener('DOMContentLoaded', () => {
   const pad = n => String(n).padStart(2, '0');
   document.getElementById('f-date').value = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
   document.getElementById('f-time').value = '07:00';
+
+  renderTicker(); // 데이터 로드 전 evergreen 문장으로 우선 표시
 
   document.getElementById('f-participant-input').addEventListener('keydown', e => {
     if (e.key === 'Enter') { e.preventDefault(); addParticipantToForm(); }
@@ -630,6 +687,8 @@ function openAddForm() {
   document.getElementById('f-location').value = '';
   document.getElementById('f-distance').value = '';
   document.getElementById('f-course-url').value = '';
+  document.getElementById('f-description').value = '';
+  updateDescCount();
   document.getElementById('f-participant-chips').innerHTML = '';
   document.getElementById('photo-preview-row').innerHTML = '';
   document.getElementById('save-btn').textContent = '저장하기';
@@ -653,6 +712,7 @@ function setView(v) {
 }
 
 function renderAll() {
+  renderTicker(); // 런 데이터가 바뀌면 전광판 문장도 갱신
   if (currentView === 'calendar') renderCalendar();
   else renderList();
 }
@@ -807,6 +867,7 @@ function buildRunCard(run) {
   }
 
   const creatorHtml = run.createdBy ? `<div class="card-creator">👑 ${esc(run.createdBy)} 개설</div>` : '';
+  const descHtml = run.description ? `<div class="card-desc">${esc(run.description)}</div>` : '';
 
   card.innerHTML = `
     <div class="card-header">
@@ -818,6 +879,7 @@ function buildRunCard(run) {
       ${run.time ? `<span class="meta-item">🕐 ${run.time}</span>` : ''}
       ${run.location ? `<span class="meta-item">📍 ${esc(run.location)}</span>` : ''}
     </div>
+    ${descHtml}
     ${creatorHtml}
     ${participantsHtml}
     ${photosHtml}`;
@@ -847,6 +909,11 @@ async function openDetail(run) {
   openModal('detail-modal-overlay');
 
   const body = document.getElementById('detail-body');
+
+  // Description (optional) — 눈에 잘 띄게 상단에 표시
+  if (run.description) {
+    body.innerHTML += `<div class="detail-section"><div class="detail-desc">${esc(run.description)}</div></div>`;
+  }
 
   // Info section
   let infoHtml = '<div class="detail-section"><div class="detail-section-title">정보</div><div class="detail-info-grid">';
@@ -930,6 +997,8 @@ function openEditModal(id) {
   document.getElementById('f-location').value = run.location || '';
   document.getElementById('f-distance').value = run.distance || '';
   document.getElementById('f-course-url').value = run.courseUrl || '';
+  document.getElementById('f-description').value = run.description || '';
+  updateDescCount();
   document.getElementById('save-btn').textContent = '수정 저장';
   document.getElementById('edit-delete-btn').style.display = 'block';
 
@@ -982,6 +1051,7 @@ async function saveRun() {
       location: document.getElementById('f-location').value.trim(),
       distance: parseFloat(document.getElementById('f-distance').value) || null,
       courseUrl: document.getElementById('f-course-url').value.trim(),
+      description: document.getElementById('f-description').value.trim(),
       participants: formParticipants,
       photos: allPhotos,
     };
@@ -1302,6 +1372,12 @@ function formatDate(str) {
 function esc(str) {
   if (!str) return '';
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function updateDescCount() {
+  const ta = document.getElementById('f-description');
+  const el = document.getElementById('desc-count');
+  if (ta && el) el.textContent = `${ta.value.length}/60`;
 }
 </script>
 </body>

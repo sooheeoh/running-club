@@ -13,13 +13,14 @@ service cloud.firestore {
     }
 
     function isValidRun(d) {
-      return d.keys().hasOnly(['title','date','time','location','distance','courseUrl','participants','photos','createdBy','createdAt'])
+      return d.keys().hasOnly(['title','date','time','location','distance','courseUrl','description','participants','photos','createdBy','createdAt'])
         && d.title is string && d.title.size() > 0 && d.title.size() <= 100
         && d.date is string && d.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
         && (!('time' in d)        || (d.time is string && d.time.size() <= 5))
         && (!('location' in d)    || (d.location is string && d.location.size() <= 200))
         && (!('distance' in d)    || (d.distance is number && d.distance >= 0 && d.distance <= 1000))
         && (!('courseUrl' in d)   || (d.courseUrl is string && d.courseUrl.size() <= 500))
+        && (!('description' in d) || (d.description is string && d.description.size() <= 200))
         && (!('participants' in d)|| (d.participants is list && d.participants.size() <= 100))
         && (!('photos' in d)      || (d.photos is list && d.photos.size() <= 2))
         && (!('createdBy' in d)   || (d.createdBy is string && d.createdBy.size() <= 50));
