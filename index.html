@@ -316,6 +316,9 @@
     padding: 7px 0;
     white-space: nowrap;
     position: relative;
+    /* 모바일(iOS Safari)에서 애니메이션 레이어가 떨어져 글자가 사라지는 현상 방지 */
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
   }
   .neon-ticker::before, .neon-ticker::after {
     content: '';
@@ -329,11 +332,15 @@
     display: inline-flex;
     gap: 0;
     animation: neon-scroll 38s linear infinite;
+    /* GPU 합성 레이어로 고정해 모바일에서 렌더링이 떨어지지 않게 */
+    will-change: transform;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
   }
   .neon-track:hover { animation-play-state: paused; }
   @keyframes neon-scroll {
-    0%   { transform: translateX(0); }
-    100% { transform: translateX(-50%); }
+    0%   { transform: translate3d(0, 0, 0); }
+    100% { transform: translate3d(-50%, 0, 0); }
   }
   .neon-phrase {
     display: inline-block;
