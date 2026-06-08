@@ -283,10 +283,11 @@
   /* ANALYTICS */
   .analytics-btn {
     background: none; border: none; cursor: pointer;
-    color: #9CA3AF; padding: 4px 6px; border-radius: 6px;
-    display: flex; align-items: center; transition: color .2s; line-height: 1;
+    color: #9CA3AF; padding: 4px 5px; border-radius: 6px; font-size: 17px;
+    display: flex; align-items: center; transition: transform .15s, filter .2s; line-height: 1;
+    filter: grayscale(0.15);
   }
-  .analytics-btn:hover { color: var(--primary); }
+  .analytics-btn:hover, .analytics-btn:active { transform: scale(1.12); filter: none; }
   .analytics-tab-row { display: flex; gap: 8px; margin-bottom: 20px; }
   .analytics-tab {
     flex: 1; padding: 9px; border: 1.5px solid var(--border); border-radius: 10px;
@@ -371,11 +372,8 @@
   <div class="header-top">
     <div style="display:flex; align-items:center; gap:6px;">
       <h1>🏃‍♀️ 한강런 클럽</h1>
-      <button class="analytics-btn" onclick="openAnalytics()" title="애널리틱스">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-          <rect x="3" y="12" width="4" height="9"/><rect x="10" y="7" width="4" height="14"/><rect x="17" y="3" width="4" height="18"/>
-        </svg>
-      </button>
+      <button class="analytics-btn" onclick="openAnalytics()" title="애널리틱스" aria-label="애널리틱스">📊</button>
+      <button class="analytics-btn" onclick="openGame()" title="한강런 게임" aria-label="게임">🕹️</button>
     </div>
     <div class="view-toggle">
       <button class="view-btn active" id="btn-cal" onclick="setView('calendar')">달력</button>
@@ -510,6 +508,19 @@
       <button class="analytics-tab" id="tab-month" onclick="switchAnalyticsTab('month')">이번 달</button>
     </div>
     <div id="analytics-content"></div>
+  </div>
+</div>
+
+<!-- GAME MODAL -->
+<div class="modal-overlay" id="game-modal-overlay" onclick="handleOverlayClick(event, 'game-modal-overlay')">
+  <div class="modal" id="game-modal" style="padding:0; height:94vh; height:94dvh; max-height:94dvh; overflow:hidden; display:flex; flex-direction:column;">
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 8px 8px 16px;">
+      <div class="modal-title" style="margin:0; font-size:16px;">🕹️ 한강런 게임</div>
+      <button onclick="closeModal('game-modal-overlay')" aria-label="닫기"
+        style="background:none; border:none; font-size:22px; line-height:1; color:var(--text-secondary); cursor:pointer; padding:6px 10px;">✕</button>
+    </div>
+    <iframe id="game-frame" title="한강런 게임" allow="fullscreen"
+      style="flex:1; width:100%; border:0; background:#0b0b0b; display:block;"></iframe>
   </div>
 </div>
 
@@ -1291,6 +1302,20 @@ function switchAnalyticsTab(tab) {
   renderAnalyticsContent();
 }
 
+// 🕹️ 게임: 이번 달 1·2·3등 실제 이름을 캐릭터로 넘겨서 game.html을 모달로 띄운다
+function openGame() {
+  const monthStr = new Date().toISOString().slice(0, 7);
+  const completedMonth = runs.filter(isCompleted).filter(r => r.date && r.date.startsWith(monthStr));
+  const top3 = buildLeaderboard(completedMonth).slice(0, 3);
+  const q = new URLSearchParams();
+  if (top3[0]) q.set('n1', top3[0].name);
+  if (top3[1]) q.set('n2', top3[1].name);
+  if (top3[2]) q.set('n3', top3[2].name);
+  const qs = q.toString();
+  document.getElementById('game-frame').src = 'game.html' + (qs ? '?' + qs : '');
+  openModal('game-modal-overlay');
+}
+
 function buildLeaderboard(filteredRuns) {
   const stats = {};
   filteredRuns.forEach(run => {
@@ -1358,6 +1383,11 @@ function openModal(overlayId) {
 function closeModal(overlayId) {
   document.getElementById(overlayId).classList.remove('open');
   document.body.style.overflow = '';
+  // 게임 모달을 닫으면 iframe을 비워 게임 루프를 멈춘다
+  if (overlayId === 'game-modal-overlay') {
+    const f = document.getElementById('game-frame');
+    if (f) f.src = 'about:blank';
+  }
 }
 function handleOverlayClick(e, overlayId) {
   if (e.target.id === overlayId) closeModal(overlayId);
