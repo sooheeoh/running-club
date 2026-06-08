@@ -16,11 +16,12 @@ body{
   overflow:hidden;touch-action:none;overscroll-behavior:none;
   -webkit-overflow-scrolling:none;user-select:none;-webkit-user-select:none;
 }
-#wrap{display:flex;flex-direction:column;width:100vw;height:100dvh;height:100vh}
-canvas{flex:1 1 auto;min-height:0;width:100%;display:block;background:#0b0b0b}
+#wrap{display:flex;flex-direction:column;width:100%;max-width:560px;height:100vh;height:100dvh;margin:0 auto}
+canvas{flex:1 1 auto;min-height:0;width:100%;display:block;background:#0b0b0b;
+  image-rendering:pixelated;image-rendering:crisp-edges}
 #ctrl{
   display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;
-  padding:10px 10px;padding-bottom:max(10px,env(safe-area-inset-bottom));
+  padding:12px 12px;padding-bottom:max(16px,env(safe-area-inset-bottom));
   background:#1a1a1a;border-top:2px solid #2a2a2a;
 }
 .btn{
@@ -107,9 +108,9 @@ function startGame(idx){
 }
 function spawnEvent(){
   const r=Math.random();
-  if(r<0.5)        events.push({t:'fly',  wx:scrollX+W+14,y:GY-46,w:30,h:20});
-  else if(r<0.75)  events.push({t:'water',wx:scrollX+W+14,y:GY-66,w:18,h:18});
-  else             events.push({t:'gat',  wx:scrollX+W+14,y:GY-66,w:18,h:18});
+  if(r<0.5)        events.push({t:'fly',  wx:scrollX+W+16,y:GY-52,w:40,h:26});
+  else if(r<0.75)  events.push({t:'water',wx:scrollX+W+16,y:GY-76,w:24,h:24});
+  else             events.push({t:'gat',  wx:scrollX+W+16,y:GY-76,w:24,h:24});
 }
 
 // Update -------------------------------------------------------------------
@@ -230,16 +231,15 @@ function drawCrouch(bx,ch){
 function drawEvent(e){
   const x=e.wx-scrollX;
   if(e.t==='fly'){
-    cx.font='13px serif';cx.textAlign='center';
+    cx.fillStyle='rgba(40,30,10,0.22)';cx.beginPath();cx.arc(x+20,e.y+14,19,0,7);cx.fill();
+    cx.font='18px serif';cx.textAlign='center';
     const j=(gtick%6<3)?0:1;
-    cx.fillText('🪰',x+6,e.y+12+j);cx.fillText('🪰',x+18,e.y+8-j);
-    cx.fillText('🪰',x+12,e.y+18+j);cx.fillText('🪰',x+24,e.y+15-j);
-    cx.fillStyle='rgba(40,30,10,0.25)';cx.beginPath();cx.arc(x+15,e.y+10,13,0,7);cx.fill();
-    cx.font='13px serif';cx.fillText('🪰',x+6,e.y+12+j);cx.fillText('🪰',x+20,e.y+10-j);
+    cx.fillText('🪰',x+10,e.y+16+j);cx.fillText('🪰',x+26,e.y+11-j);
+    cx.fillText('🪰',x+17,e.y+25+j);cx.fillText('🪰',x+33,e.y+20-j);
     cx.textAlign='left';
   }else{
-    cx.font='20px serif';cx.textAlign='center';
-    cx.fillText(e.t==='gat'?'🥤':'💧',x+9,e.y+17);
+    cx.font='28px serif';cx.textAlign='center';
+    cx.fillText(e.t==='gat'?'🥤':'💧',x+12,e.y+22);
     cx.textAlign='left';
   }
 }
@@ -365,21 +365,34 @@ document.addEventListener('keydown',e=>{
 });
 document.addEventListener('keyup',e=>{if(e.code==='ArrowDown'||e.code==='KeyS')setCrouch(false);});
 
-// Fill the viewport: size the canvas backing store to its displayed box ------
+// Fit to the *visible* viewport (handles Safari toolbar, Galaxy, foldables) --
+// World height stays fixed at 540 so sprite/object scale is identical on every
+// device; only the world width follows the screen's aspect ratio. CSS then
+// stretches the canvas to fill its box (same aspect → no distortion).
+const wrap=document.getElementById('wrap');
 function resize(){
   const r=cv.getBoundingClientRect();
-  W=Math.max(240,Math.round(r.width));
-  H=Math.max(360,Math.round(r.height));
+  const cw=Math.max(200,r.width),chh=Math.max(300,r.height);
+  H=540;                                   // fixed virtual height
+  W=Math.max(240,Math.min(900,Math.round(H*cw/chh)));
   cv.width=W;cv.height=H;
   cx.imageSmoothingEnabled=false;          // reset by canvas resize
-  GY=H-32;
-  top0=80;rh=(H-top0-20)/3;
-  pl.y=GY-CH_H;                            // keep runner on the ground
+  GY=H-32;top0=80;rh=(H-top0-20)/3;
+  pl.y=GY-CH_H;
 }
-window.addEventListener('resize',resize);
-window.addEventListener('orientationchange',resize);
+function fit(){
+  const vv=window.visualViewport;
+  wrap.style.height=(vv?vv.height:window.innerHeight)+'px';
+  resize();
+}
+window.addEventListener('resize',fit);
+window.addEventListener('orientationchange',fit);
+if(window.visualViewport){
+  visualViewport.addEventListener('resize',fit);
+  visualViewport.addEventListener('scroll',fit);
+}
 
-resize();
+fit();
 loop();
 </script>
 </body>
