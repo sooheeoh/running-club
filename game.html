@@ -6,8 +6,10 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="color-scheme" content="light">
 <title>한강런</title>
 <style>
+html{color-scheme:only light}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{height:100%;height:-webkit-fill-available}
 body{
@@ -377,23 +379,26 @@ const wrap=document.getElementById('wrap');
 function resize(){
   const r=cv.getBoundingClientRect();
   const cw=Math.max(200,r.width),chh=Math.max(300,r.height);
-  H=540;                                   // fixed virtual height
-  W=Math.max(240,Math.min(900,Math.round(H*cw/chh)));
-  cv.width=W;cv.height=H;
-  cx.imageSmoothingEnabled=false;          // reset by canvas resize
+  H=540;
+  const newW=Math.max(240,Math.min(900,Math.round(H*cw/chh)));
+  if(cv.width!==newW||cv.height!==H){
+    cv.width=newW;cv.height=H;
+    cx.imageSmoothingEnabled=false;
+  }
+  W=newW;
   GY=H-32;top0=80;rh=(H-top0-20)/3;
   pl.y=GY-CH_H;
 }
-function fit(){
+function fitLayout(){
   const vv=window.visualViewport;
   wrap.style.height=(vv?vv.height:window.innerHeight)+'px';
-  resize();
 }
+function fit(){fitLayout();resize();}
 window.addEventListener('resize',fit);
 window.addEventListener('orientationchange',fit);
 if(window.visualViewport){
   visualViewport.addEventListener('resize',fit);
-  visualViewport.addEventListener('scroll',fit);
+  visualViewport.addEventListener('scroll',fitLayout);
 }
 
 fit();
