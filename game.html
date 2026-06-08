@@ -40,7 +40,7 @@ canvas{flex:1 1 auto;min-height:0;width:100%;display:block;background:#0b0b0b;
   <canvas id="c" width="300" height="540"></canvas>
   <div id="ctrl">
     <button class="btn" id="bJ">⬆️ 점프<br><small>물·게토레이 먹기</small><br><small>Space / ↑</small></button>
-    <button class="btn" id="bC">⬇️ 웅크리기<br><small>초파리 피하기</small><br><small>↓ / S</small></button>
+    <button class="btn" id="bC">⬇️ 웅크리기<br><small>벌레떼 피하기</small><br><small>↓ / S</small></button>
   </div>
 </div>
 <script>
@@ -108,9 +108,9 @@ function startGame(idx){
 }
 function spawnEvent(){
   const r=Math.random();
-  if(r<0.5)        events.push({t:'fly',  wx:scrollX+W+16,y:GY-52,w:40,h:26});
-  else if(r<0.75)  events.push({t:'water',wx:scrollX+W+16,y:GY-76,w:24,h:24});
-  else             events.push({t:'gat',  wx:scrollX+W+16,y:GY-76,w:24,h:24});
+  if(r<0.5)        events.push({t:'fly',  wx:scrollX+W+16,y:GY-72,w:44,h:46});
+  else if(r<0.75)  events.push({t:'water',wx:scrollX+W+16,y:GY-86,w:24,h:24});
+  else             events.push({t:'gat',  wx:scrollX+W+16,y:GY-86,w:24,h:24});
 }
 
 // Update -------------------------------------------------------------------
@@ -231,12 +231,16 @@ function drawCrouch(bx,ch){
 function drawEvent(e){
   const x=e.wx-scrollX;
   if(e.t==='fly'){
-    cx.fillStyle='rgba(40,30,10,0.22)';cx.beginPath();cx.arc(x+20,e.y+14,19,0,7);cx.fill();
-    cx.font='18px serif';cx.textAlign='center';
-    const j=(gtick%6<3)?0:1;
-    cx.fillText('🪰',x+10,e.y+16+j);cx.fillText('🪰',x+26,e.y+11-j);
-    cx.fillText('🪰',x+17,e.y+25+j);cx.fillText('🪰',x+33,e.y+20-j);
-    cx.textAlign='left';
+    // a buzzing cloud of little dots (no gross fly emoji)
+    cx.fillStyle='rgba(110,100,90,0.16)';
+    cx.beginPath();cx.ellipse(x+e.w/2,e.y+e.h/2,e.w/2,e.h/2,0,0,7);cx.fill();
+    for(let k=0;k<20;k++){
+      const bxp=x+5+((k*53)%(e.w-8)), byp=e.y+5+((k*89)%(e.h-8));
+      const jx=Math.sin(gtick*0.45+k)*1.6, jy=Math.cos(gtick*0.5+k*1.7)*1.6;
+      const s=k%5===0?3:2;
+      cx.fillStyle=k%5===0?'#1c1c1c':'#333';
+      cx.fillRect(~~(bxp+jx),~~(byp+jy),s,s);
+    }
   }else{
     cx.font='28px serif';cx.textAlign='center';
     cx.fillText(e.t==='gat'?'🥤':'💧',x+12,e.y+22);
@@ -281,7 +285,7 @@ function drawSelect(){
   cx.fillStyle='rgba(0,0,0,0.5)';cx.fillRect(0,0,W,H);
   cx.textAlign='center';
   cx.fillStyle='#FFD700';cx.font='bold 24px monospace';cx.fillText('캐릭터 선택',W/2,46);
-  cx.fillStyle='#bbb';cx.font='11px monospace';cx.fillText('점프=음료🥤  웅크리기=초파리🪰',W/2,66);
+  cx.fillStyle='#bbb';cx.font='11px monospace';cx.fillText('점프=음료 먹기   웅크리기=벌레떼 피하기',W/2,66);
   const frame=Math.floor(gtick/8)%4;
   for(let i=0;i<3;i++){
     const ch=CHARS[i],ry=top0+i*rh,cyr=ry+rh/2;
