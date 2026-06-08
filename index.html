@@ -1091,6 +1091,10 @@ async function saveRun() {
     } else {
       data.createdBy = myNickname || '';
       data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+      if (myNickname) {
+        const others = (data.participants || []).filter(p => p !== myNickname);
+        data.participants = [myNickname, ...others];
+      }
       await db.collection('runs').doc(runId).set(data);
       showToast('런이 추가됐어요 🏃‍♀️');
     }
