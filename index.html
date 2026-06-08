@@ -707,7 +707,7 @@ function confirmNickname() {
 function openAddForm() {
   editingRunId = null;
   existingPhotos = [];
-  formParticipants = [];
+  formParticipants = myNickname ? [myNickname] : [];
   formPhotos = [];
   document.getElementById('modal-title-text').textContent = '새 런 추가';
   document.getElementById('creator-badge-display').textContent = `👑 ${myNickname} 개설`;
@@ -717,7 +717,7 @@ function openAddForm() {
   document.getElementById('f-course-url').value = '';
   document.getElementById('f-description').value = '';
   updateDescCount();
-  document.getElementById('f-participant-chips').innerHTML = '';
+  renderFormParticipants();
   document.getElementById('photo-preview-row').innerHTML = '';
   document.getElementById('save-btn').textContent = '저장하기';
 
