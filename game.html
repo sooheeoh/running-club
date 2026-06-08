@@ -11,22 +11,27 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{height:100%;height:-webkit-fill-available}
 body{
-  min-height:100vh;min-height:100dvh;background:#111;
+  min-height:100vh;min-height:100dvh;background:#0b0b0b;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   overflow:hidden;touch-action:none;overscroll-behavior:none;
   -webkit-overflow-scrolling:none;user-select:none;-webkit-user-select:none;
 }
-#wrap{display:flex;flex-direction:column;align-items:stretch;width:min(480px,100vw)}
-canvas{display:block;width:100%;aspect-ratio:16/9;image-rendering:pixelated;image-rendering:crisp-edges}
+#wrap{display:inline-flex;flex-direction:column;align-items:stretch}
+canvas{
+  display:block;align-self:center;
+  height:min(70dvh,680px);width:auto;aspect-ratio:300/540;
+  image-rendering:pixelated;image-rendering:crisp-edges;
+  background:#0b0b0b;
+}
 #ctrl{
-  display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;
+  display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;width:100%;
   padding:10px 10px;padding-bottom:max(10px,env(safe-area-inset-bottom));
   background:#1a1a1a;border-top:2px solid #2a2a2a;
 }
 .btn{
   background:#252525;border:2px solid #3a3a3a;border-radius:6px;
   color:#ccc;font:bold 14px/1.3 'Courier New',monospace;
-  min-height:56px;padding:12px 4px;cursor:pointer;
+  min-height:60px;padding:12px 4px;cursor:pointer;
   user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;
   touch-action:manipulation;transition:background 50ms,border-color 50ms,transform 50ms;
 }
@@ -35,7 +40,7 @@ canvas{display:block;width:100%;aspect-ratio:16/9;image-rendering:pixelated;imag
 </head>
 <body>
 <div id="wrap">
-  <canvas id="c" width="480" height="270"></canvas>
+  <canvas id="c" width="300" height="540"></canvas>
   <div id="ctrl">
     <button class="btn" id="bL">👟 왼발<br><small style="color:#777">A / ←</small></button>
     <button class="btn" id="bJ">↑ 점프<br><small style="color:#777">Space / ↑</small></button>
@@ -48,28 +53,23 @@ const cv=document.getElementById('c');
 const cx=cv.getContext('2d');
 cx.imageSmoothingEnabled=false;
 
-const W=480,H=270,BK=16;
-const BASE_Y=238;     // ground-top y for block height 0 (flat). hills go upward (smaller y)
-const PLX=60;         // player fixed screen x
+const W=300,H=540,BK=16;
+const SB_H=156;       // scoreboard (jumbotron) height at the top
+const BASE_Y=H-32;    // ground-top y for block height 0 (flat); hills go upward
+const PLX=64;         // player fixed screen x
 const FEET=31;        // char top -> feet bottom
 
 // Tuning -------------------------------------------------------------------
-const VMAX=11;        // max speed
-const TAP=1.25;       // base impulse per good alternating tap
-const FR_BASE=0.985;  // friction multiplier per frame
-const FR_HI=0.965;    // stronger friction above v=8 (caps downhill runaway)
-const GRAV=0.85;      // terrain gravity along slope
-const JUMP_V=-11.5, JUMP_G=0.6;
+const VMAX=11,TAP=1.25,FR_BASE=0.985,FR_HI=0.965,GRAV=0.85,JUMP_V=-11.5,JUMP_G=0.6;
 
 // Palette ------------------------------------------------------------------
 const K={
   skyDT:'#5BA3C8',skyDB:'#A8D8F0', skyET:'#C26820',skyEB:'#E8A050',
   skyNT:'#0D1B2A',skyNB:'#1A3A5C',
-  g1:'#5D9E2F',g2:'#4A7A25',g3:'#8B6040',g4:'#7A5030',g5:'#5A3820',
+  g1:'#5D9E2F',g2:'#4A7A25',g3:'#8B6040',g4:'#7A5030',
   st:'#9E9E9E',stD:'#6E6E6E',stH:'#C0C0C0',
   wt:'#1976D2',wtH:'#42A5F5',wtD:'#0D47A1',
-  sun:'#FFD700',sunG:'#FFF176', cl:'#FFFFFF',clS:'#DDEEFF',
-  hud:'rgba(0,0,0,0.5)', sk:'#FFCC99',
+  sun:'#FFD700',sunG:'#FFF176', cl:'#FFFFFF',clS:'#DDEEFF', sk:'#FFCC99',
 };
 function lerpC(a,b,t){
   const p=x=>parseInt(x,16),h=x=>x.replace('#','');
@@ -80,7 +80,7 @@ function lerpC(a,b,t){
 }
 function px(x,y,w,h,c){cx.fillStyle=c;cx.fillRect(~~x,~~y,~~w,~~h)}
 
-// Characters (cosmetic only — all equal stats) -----------------------------
+// Characters (cosmetic only — equal stats) ---------------------------------
 const params=new URLSearchParams(location.search);
 const NAMES=[
   params.get('n1')||'이번달 1등',
@@ -94,17 +94,14 @@ const CHARS=[
 ];
 
 // State --------------------------------------------------------------------
-let phase='select';           // select | play | dead
-let charIdx=0;
+let phase='select',charIdx=0;
 let dist=0,best=+localStorage.getItem('hgbest')||0,newBest=false;
-let tick=0,gtick=0,scrollX=0,v=0;
-let spawnAccum=0,spawnGap=240;
-
+let tick=0,gtick=0,scrollX=0,v=0,spawnAccum=0,spawnGap=240;
 const pl={y:BASE_Y-FEET,vy:0,grnd:true,foot:null,lastStep:0,legF:0,legT:0};
 let obs=[];
-const clouds=[{x:70,y:32,w:60},{x:220,y:18,w:76},{x:380,y:46,w:50}];
+const clouds=[{x:60,y:184,w:58},{x:190,y:210,w:72},{x:20,y:244,w:48}];
 
-// Terrain (block-height segments, rendered as minecraft stairs) -------------
+// Terrain ------------------------------------------------------------------
 let segs=[],segEnd=0,lastB=0;
 function rnd(n){return ~~(Math.random()*n)}
 function pushSeg(type){
@@ -131,36 +128,27 @@ function gradeAt(wx){
   for(const s of segs)if(wx>=s.x0&&wx<s.x0+s.len)return (s.b1-s.b0)*BK/s.len;
   return 0;
 }
-function resetTerrain(){
-  segs=[{x0:0,len:340,b0:0,b1:0}];segEnd=340;lastB=0; // flat start straight
-  ensureTerrain(W+400);
-}
+function resetTerrain(){segs=[{x0:0,len:300,b0:0,b1:0}];segEnd=300;lastB=0;ensureTerrain(W+400);}
 
 // Input --------------------------------------------------------------------
 function tapFoot(f){
   if(phase!=='play')return;
-  if(f===pl.foot){v=Math.max(0,v-0.25);return;}      // same foot wasted
+  if(f===pl.foot){v=Math.max(0,v-0.25);return;}
   const now=performance.now(),gap=now-pl.lastStep;
   pl.lastStep=now;pl.foot=f;
   const factor=Math.max(0.3,Math.min(1.35,280/Math.max(gap,70)));
   v=Math.min(VMAX,v+TAP*factor);
 }
-function tapJump(){
-  if(phase!=='play')return;
-  if(pl.grnd){pl.vy=JUMP_V;pl.grnd=false;}
-}
+function tapJump(){if(phase!=='play')return;if(pl.grnd){pl.vy=JUMP_V;pl.grnd=false;}}
 function startGame(idx){
-  charIdx=idx;
-  phase='play';dist=0;tick=0;scrollX=0;v=2;newBest=false;
-  obs=[];spawnAccum=0;spawnGap=240;
-  resetTerrain();
+  charIdx=idx;phase='play';dist=0;tick=0;scrollX=0;v=2;newBest=false;
+  obs=[];spawnAccum=0;spawnGap=240;resetTerrain();
   Object.assign(pl,{y:BASE_Y-FEET,vy:0,grnd:true,foot:null,lastStep:0,legF:0,legT:0});
 }
-
 function spawn(){
   const r=Math.random();
-  if(r<0.44)      obs.push({t:'s1',wx:scrollX+W+8,w:BK,  h:BK});
-  else if(r<0.68) obs.push({t:'s2',wx:scrollX+W+8,w:BK,  h:BK*2});
+  if(r<0.44)      obs.push({t:'s1',wx:scrollX+W+8,w:BK,h:BK});
+  else if(r<0.68) obs.push({t:'s2',wx:scrollX+W+8,w:BK,h:BK*2});
   else            obs.push({t:'w', wx:scrollX+W+8,w:BK*2+rnd(BK),h:7});
 }
 
@@ -170,27 +158,21 @@ function update(){
   for(const c of clouds){c.x-=0.3;if(c.x+c.w<0)c.x=W+c.w+10;}
   if(phase!=='play')return;
   tick++;
-  ensureTerrain(scrollX+W+400);
-  pruneTerrain(scrollX-60);
-
+  ensureTerrain(scrollX+W+400);pruneTerrain(scrollX-60);
   const pwx=scrollX+PLX;
-  v+=-GRAV*gradeAt(pwx);            // uphill slows, downhill speeds up
-  v*=(v>8?FR_HI:FR_BASE);          // friction → stops if you stop tapping
+  v+=-GRAV*gradeAt(pwx);
+  v*=(v>8?FR_HI:FR_BASE);
   if(v<0.02)v=0;
   v=Math.min(VMAX,v);
   scrollX+=v;dist+=v*0.4;
-
   if(v>0.4){const rate=Math.max(3,~~(18-v*1.4));if(++pl.legT>=rate){pl.legT=0;pl.legF=(pl.legF+1)%4;}}
   else pl.legF=0;
-
   const gy=groundYAt(scrollX+PLX)-FEET;
   if(!pl.grnd){pl.y+=pl.vy;pl.vy+=JUMP_G;if(pl.y>=gy){pl.y=gy;pl.vy=0;pl.grnd=true;}}
   else pl.y=gy;
-
   spawnAccum+=v;
   if(spawnAccum>=spawnGap){spawnAccum=0;spawn();spawnGap=Math.max(150,300-dist*0.015)-rnd(70);}
   obs=obs.filter(o=>o.wx>scrollX-50);
-
   const bx0=PLX-2,bw=15,by0=pl.y+5,bh=24;
   for(const o of obs){
     const ox=o.wx-scrollX,oTop=groundYAt(o.wx)-o.h;
@@ -201,7 +183,7 @@ function update(){
   }
 }
 
-// Draw: sky / scenery ------------------------------------------------------
+// Scenery ------------------------------------------------------------------
 function skyPhase(){return phase==='play'?(tick/3000)%1:0;}
 function drawSky(){
   const t=skyPhase();let top,bot;
@@ -214,16 +196,17 @@ function drawSky(){
 }
 function drawStars(){
   const t=skyPhase();if(t<0.5)return;
-  const a=Math.min(1,(t-0.5)/0.15)*0.85;cx.fillStyle=`rgba(255,255,255,${a})`;
-  for(let i=0;i<45;i++)cx.fillRect((i*139+17)%W,(i*97+11)%(BASE_Y-40),(i%4===0)?2:1,(i%4===0)?2:1);
+  const a=Math.min(1,(t-0.5)/0.15)*0.85,band=BASE_Y-40-SB_H;
+  cx.fillStyle=`rgba(255,255,255,${a})`;
+  for(let i=0;i<40;i++)cx.fillRect((i*97+13)%W,SB_H+((i*113+7)%band),(i%4===0)?2:1,(i%4===0)?2:1);
 }
 function drawSun(){
   const t=skyPhase();if(t>0.72)return;
   const a=t<0.55?1:Math.max(0,1-(t-0.55)/0.17);
-  const sx=(W*0.78-(scrollX*0.04)%W+W)%W,sy=28+Math.sin(t*Math.PI*0.85)*18;
+  const sx=(W*0.72-(scrollX*0.04)%W+W)%W,sy=186+Math.sin(t*Math.PI*0.85)*14;
   cx.globalAlpha=a;
-  cx.fillStyle=K.sunG;cx.beginPath();cx.arc(sx,sy,20,0,7);cx.fill();
-  cx.fillStyle=K.sun; cx.beginPath();cx.arc(sx,sy,13,0,7);cx.fill();
+  cx.fillStyle=K.sunG;cx.beginPath();cx.arc(sx,sy,18,0,7);cx.fill();
+  cx.fillStyle=K.sun; cx.beginPath();cx.arc(sx,sy,12,0,7);cx.fill();
   cx.globalAlpha=1;
 }
 function drawClouds(){
@@ -237,46 +220,39 @@ function drawClouds(){
 function drawGround(){
   const startWX=Math.floor(scrollX/BK)*BK;
   for(let wx=startWX;wx<scrollX+W+BK;wx+=BK){
-    const sx=wx-scrollX, b=Math.round(blkAt(wx+BK/2)), topY=BASE_Y-b*BK;
+    const sx=wx-scrollX,b=Math.round(blkAt(wx+BK/2)),topY=BASE_Y-b*BK;
     px(sx,topY,BK,4,K.g1);px(sx,topY+4,BK,4,K.g2);
     for(let y=topY+8;y<H;y+=BK)px(sx,y,BK,BK,((y/BK)&1)?K.g4:K.g3);
     cx.fillStyle='rgba(0,0,0,0.18)';cx.fillRect(~~sx,~~topY,1,H-topY);
   }
 }
 
-// Draw: runner (parameterised by character) --------------------------------
+// Runner -------------------------------------------------------------------
 const LA=[[0,0,0,0],[3,-3,-3,3],[0,0,0,0],[-3,3,3,-3]];
 function drawRunner(bx,by,frame,ch,grnd){
   const la=LA[frame],sk=K.sk,pants=ch.pants,pantsD='#1A2436',top=ch.top,topD=ch.topD;
-  // legs + shoes (sturdy: width 6)
   px(bx+1,by+19+la[0],6,9,pants);px(bx+1,by+19+la[0],6,2,pantsD);
   px(bx,  by+27+la[0],7,4,'#3E2010');px(bx,by+27+la[0],7,1,'#251208');
   px(bx+8,by+19+la[1],6,9,pants);px(bx+8,by+19+la[1],6,2,pantsD);
   px(bx+7,by+27+la[1],7,4,'#3E2010');px(bx+7,by+27+la[1],7,1,'#251208');
-  // body (sturdy: width 12)
   px(bx+1,by+10,12,9,top);px(bx+1,by+10,12,2,topD);
-  // arms
   px(bx-2,by+11+la[2],4,7,top);px(bx-2,by+11+la[2],4,2,topD);px(bx-2,by+17+la[2],4,3,sk);
   px(bx+12,by+11+la[3],4,7,top);px(bx+12,by+11+la[3],4,2,topD);px(bx+12,by+17+la[3],4,3,sk);
-  // head
   px(bx+2,by,11,10,sk);
-  // hair by style
   if(ch.hair==='pony'){
     px(bx+2,by,11,3,ch.hairC);px(bx+1,by+2,3,6,ch.hairC);
-    const sway=(frame===1||frame===3)?1:0;
-    px(bx-4,by+1+sway,3,4,ch.hairC);px(bx-6,by+3+sway,3,4,ch.hairC);
+    const s=(frame===1||frame===3)?1:0;
+    px(bx-4,by+1+s,3,4,ch.hairC);px(bx-6,by+3+s,3,4,ch.hairC);
   }else if(ch.hair==='bob'){
     px(bx+1,by,12,4,ch.hairC);px(bx+1,by+2,3,9,ch.hairC);px(bx+10,by+2,3,9,ch.hairC);
-  }else{ // buns
+  }else{
     px(bx+2,by,11,3,ch.hairC);px(bx,by-3,5,5,ch.hairC);px(bx+9,by-3,5,5,ch.hairC);
   }
   if(ch.band)px(bx+2,by+2,11,2,ch.band);
-  // face
   if(grnd){px(bx+3,by+4,3,3,'#fff');px(bx+8,by+4,3,3,'#fff');px(bx+4,by+5,2,2,'#222');px(bx+9,by+5,2,2,'#222');}
   else{px(bx+3,by+5,3,1,'#222');px(bx+8,by+5,3,1,'#222');}
   px(bx+5,by+8,3,1,'#A05030');
 }
-
 function drawObs(o){
   const x=o.wx-scrollX,top=groundYAt(o.wx)-o.h;
   if(o.t==='s1'||o.t==='s2'){
@@ -290,64 +266,80 @@ function drawObs(o){
   }
 }
 
-// HUD & overlays -----------------------------------------------------------
-function drawHUD(){
-  px(6,6,168,40,K.hud);
-  cx.fillStyle='#fff';cx.font='bold 12px monospace';
-  cx.fillText(`거리  ${(dist/10).toFixed(1)}m`,14,22);
-  cx.fillStyle=CHARS[charIdx].glow;
-  cx.fillText(`${CHARS[charIdx].medal} ${NAMES[charIdx]}`,14,38);
-  // speed gauge
-  const gx=W-86,gy=8;px(gx,gy,80,34,K.hud);
-  cx.fillStyle='#444';cx.fillRect(gx+4,gy+16,72,8);
+// Scoreboard (stadium jumbotron) -------------------------------------------
+function drawScoreboard(){
+  px(0,0,W,SB_H,'#0A0E14');
+  cx.strokeStyle='#1f3a2e';cx.lineWidth=2;cx.strokeRect(3,3,W-6,SB_H-8);
+  // blinking stadium lights
+  for(let i=10;i<W-8;i+=26){const on=(Math.floor(Date.now()/280)+i)%2===0;px(i,8,4,4,on?'#FFE680':'#4a4a32');}
+  cx.textAlign='center';
+  cx.fillStyle='#FF2D78';cx.font='bold 12px monospace';cx.fillText('🏟 한강 스타디움',W/2,30);
+  // big distance
+  const ds=(dist/10).toFixed(0);
+  cx.font='bold 42px monospace';const dw=cx.measureText(ds).width;
+  cx.textAlign='left';
+  cx.fillStyle='#39FF8F';cx.fillText(ds,W/2-dw/2,76);
+  cx.font='bold 15px monospace';cx.fillStyle='#9fe9c5';cx.fillText('m',W/2+dw/2+5,76);
+  cx.textAlign='left';
+  // speed label + slope
+  cx.font='10px monospace';cx.fillStyle='#999';cx.fillText('속도',30,90);
+  const g=gradeAt(scrollX+PLX);cx.font='bold 11px monospace';
+  if(g>0.04){cx.fillStyle='#FF7755';cx.textAlign='right';cx.fillText('▲ 업힐',W-30,90);}
+  else if(g<-0.04){cx.fillStyle='#55CCFF';cx.textAlign='right';cx.fillText('▼ 다운힐',W-30,90);}
+  else{cx.fillStyle='#888';cx.textAlign='right';cx.fillText('— 평지',W-30,90);}
+  cx.textAlign='left';
+  // speed bar
+  const bx=30,by=94,bw=W-60;
+  px(bx,by,bw,12,'#1a1f28');
   const r=v/VMAX;cx.fillStyle=r>0.75?'#FF4444':r>0.45?'#FFA500':'#44DD44';
-  cx.fillRect(gx+4,gy+16,~~(72*r),8);
-  cx.fillStyle='#aaa';cx.font='9px monospace';cx.fillText('속도',gx+6,gy+12);
-  // slope indicator
-  const g=gradeAt(scrollX+PLX);
-  cx.font='bold 11px monospace';
-  if(g>0.04){cx.fillStyle='#FF7755';cx.fillText('▲ 업힐',gx+34,gy+33);}
-  else if(g<-0.04){cx.fillStyle='#55CCFF';cx.fillText('▼ 다운힐',gx+30,gy+33);}
-  else{cx.fillStyle='#888';cx.fillText('— 평지',gx+34,gy+33);}
+  px(bx,by,bw*r,12,cx.fillStyle);
+  cx.strokeStyle='#333';cx.lineWidth=1;cx.strokeRect(bx,by,bw,12);
+  // medal + name + best
+  cx.textAlign='center';
+  cx.font='bold 14px monospace';cx.fillStyle=CHARS[charIdx].glow;
+  let nm=NAMES[charIdx];if(nm.length>10)nm=nm.slice(0,10)+'…';
+  cx.fillText(CHARS[charIdx].medal+' '+nm,W/2,128);
+  cx.font='11px monospace';cx.fillStyle='#FFD700';
+  cx.fillText('🏆 최고 '+(best/10).toFixed(0)+'m',W/2,146);
+  cx.textAlign='left';
 }
 function blink(){return Math.floor(Date.now()/550)%2===0;}
 
 function drawSelect(){
   drawSky();drawClouds();drawGround();
-  cx.fillStyle='rgba(0,0,0,0.35)';cx.fillRect(0,0,W,H);
+  cx.fillStyle='rgba(0,0,0,0.5)';cx.fillRect(0,0,W,H);
   cx.textAlign='center';
-  cx.fillStyle='#FFD700';cx.font='bold 22px monospace';
-  cx.fillText('캐릭터 선택',W/2,30);
-  cx.fillStyle='#ccc';cx.font='11px monospace';
-  cx.fillText('이번달 순위 주자 중 한 명을 골라 달려요',W/2,48);
-  const cxs=[80,240,400];
+  cx.fillStyle='#FFD700';cx.font='bold 24px monospace';cx.fillText('캐릭터 선택',W/2,46);
+  cx.fillStyle='#bbb';cx.font='11px monospace';cx.fillText('이번달 순위 주자 중 한 명을 골라요',W/2,66);
+  const top0=80,rh=148,frame=Math.floor(gtick/8)%4;
   for(let i=0;i<3;i++){
-    const ch=CHARS[i],ox=cxs[i],cy=150;
-    // glow aura
-    cx.globalAlpha=0.18;cx.fillStyle=ch.glow;
-    cx.beginPath();cx.arc(ox,cy-2,30,0,7);cx.fill();cx.globalAlpha=1;
-    // medal
-    cx.font='20px serif';cx.fillText(ch.medal,ox,cy-44);
-    // runner (animated)
-    const frame=Math.floor(gtick/8)%4;
-    drawRunner(ox-7,cy-32,frame,ch,true);
-    // name
-    cx.fillStyle=ch.glow;cx.font='bold 12px monospace';
-    let nm=NAMES[i];if(nm.length>8)nm=nm.slice(0,8)+'…';
-    cx.fillText(nm,ox,cy+30);
+    const ch=CHARS[i],ry=top0+i*rh,cyr=ry+rh/2;
+    // card
+    cx.fillStyle='rgba(255,255,255,0.04)';cx.fillRect(16,ry+10,W-32,rh-22);
+    cx.strokeStyle=ch.glow;cx.lineWidth=2;cx.strokeRect(16,ry+10,W-32,rh-22);
+    // glow + runner on left
+    cx.globalAlpha=0.16;cx.fillStyle=ch.glow;cx.beginPath();cx.arc(70,cyr+2,30,0,7);cx.fill();cx.globalAlpha=1;
+    drawRunner(63,cyr-16,frame,ch,true);
+    // medal + name on right
+    cx.textAlign='left';
+    cx.font='22px serif';cx.fillText(ch.medal,140,cyr-12);
+    cx.font='bold 14px monospace';cx.fillStyle=ch.glow;
+    let nm=NAMES[i];if(nm.length>9)nm=nm.slice(0,9)+'…';
+    cx.fillText(nm,140,cyr+12);
+    cx.font='10px monospace';cx.fillStyle='#999';cx.fillText('이번달 '+(i+1)+'등',140,cyr+30);
+    cx.textAlign='center';
   }
-  if(blink()){cx.fillStyle='#88FF88';cx.font='bold 13px monospace';
-    cx.fillText('[ 캐릭터를 탭하세요 ]',W/2,H-18);}
+  if(blink()){cx.fillStyle='#88FF88';cx.font='bold 13px monospace';cx.fillText('[ 캐릭터를 탭하세요 ]',W/2,H-16);}
   cx.textAlign='left';
 }
 function overlay(title,lines,hint){
-  cx.fillStyle='rgba(0,0,0,0.65)';cx.fillRect(0,0,W,H);
+  cx.fillStyle='rgba(0,0,0,0.6)';cx.fillRect(0,0,W,H);
   cx.textAlign='center';
   cx.fillStyle='#FFD700';cx.font='bold 30px monospace';cx.fillText(title,W/2,H/2-46);
-  cx.fillStyle='#ddd';cx.font='13px monospace';
-  lines.forEach((l,i)=>cx.fillText(l,W/2,H/2+2+i*22));
-  if(blink()){cx.fillStyle='#88FF88';cx.font='bold 13px monospace';cx.fillText(hint,W/2,H/2+56);}
-  cx.fillStyle='#aaa';cx.font='11px monospace';cx.fillText('아래쪽 탭 → 캐릭터 변경',W/2,H-14);
+  cx.fillStyle='#ddd';cx.font='14px monospace';
+  lines.forEach((l,i)=>cx.fillText(l,W/2,H/2+2+i*24));
+  if(blink()){cx.fillStyle='#88FF88';cx.font='bold 13px monospace';cx.fillText(hint,W/2,H/2+62);}
+  cx.fillStyle='#aaa';cx.font='11px monospace';cx.fillText('아래쪽 탭 → 캐릭터 변경',W/2,H-16);
   cx.textAlign='left';
 }
 
@@ -359,10 +351,10 @@ function loop(){
   drawSky();drawStars();drawSun();drawClouds();drawGround();
   obs.forEach(drawObs);
   drawRunner(PLX,~~pl.y,pl.legF,CHARS[charIdx],pl.grnd);
-  if(phase==='play')drawHUD();
-  else overlay('GAME OVER',
+  drawScoreboard();
+  if(phase==='dead')overlay('GAME OVER',
     [`달린 거리  ${(dist/10).toFixed(1)}m`,
-     newBest?'🏆 신기록!':`최고 기록  ${(best/10).toFixed(1)}m`],
+     newBest?'🏆 신기록!':`최고 ${(best/10).toFixed(1)}m`],
     '[ 탭하여 다시하기 ]');
   requestAnimationFrame(loop);
 }
@@ -380,29 +372,24 @@ bindBtn('bL',()=>tapFoot('L'));
 bindBtn('bR',()=>tapFoot('R'));
 bindBtn('bJ',()=>tapJump());
 
-function canvasXY(e){
-  const r=cv.getBoundingClientRect();
-  return [(e.clientX-r.left)/r.width*W,(e.clientY-r.top)/r.height*H];
-}
+function canvasXY(e){const r=cv.getBoundingClientRect();return [(e.clientX-r.left)/r.width*W,(e.clientY-r.top)/r.height*H];}
 cv.addEventListener('pointerdown',e=>{
-  e.preventDefault();
-  const [x,y]=canvasXY(e);
-  if(phase==='select'){startGame(x<W/3?0:x<2*W/3?1:2);}
-  else if(phase==='dead'){if(y>H*0.78)phase='select';else startGame(charIdx);}
+  e.preventDefault();const [x,y]=canvasXY(e);
+  if(phase==='select'){const slot=Math.max(0,Math.min(2,Math.floor((y-80)/148)));startGame(slot);}
+  else if(phase==='dead'){if(y>H*0.82)phase='select';else startGame(charIdx);}
 });
 document.addEventListener('keydown',e=>{
   switch(e.code){
     case'KeyA':case'ArrowLeft':tapFoot('L');break;
     case'KeyD':case'ArrowRight':tapFoot('R');break;
-    case'Space':case'ArrowUp':case'KeyW':e.preventDefault();
-      if(phase==='dead')startGame(charIdx);else tapJump();break;
+    case'Space':case'ArrowUp':case'KeyW':e.preventDefault();if(phase==='dead')startGame(charIdx);else tapJump();break;
     case'Digit1':if(phase!=='play')startGame(0);break;
     case'Digit2':if(phase!=='play')startGame(1);break;
     case'Digit3':if(phase!=='play')startGame(2);break;
   }
 });
 
-resetTerrain();   // ensure ground exists for the select screen
+resetTerrain();
 loop();
 </script>
 </body>
