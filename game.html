@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>한강런</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{height:100%;height:-webkit-fill-available}
+body{
+  min-height:100vh;min-height:100dvh;
+  background:#111;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  overflow:hidden;
+  touch-action:none;
+  overscroll-behavior:none;
+  -webkit-overflow-scrolling:none;
+  user-select:none;-webkit-user-select:none;
+}
+#wrap{
+  display:flex;flex-direction:column;align-items:stretch;
+  width:min(480px,100vw);
+  /* fill vertical space if canvas+buttons don't fill */
+}
+canvas{display:block;width:100%;aspect-ratio:16/9;image-rendering:pixelated;image-rendering:crisp-edges}
+#ctrl{
+  display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;
+  padding:10px 10px;
+  padding-bottom:max(10px, env(safe-area-inset-bottom));
+  background:#1a1a1a;border-top:2px solid #2a2a2a;
+}
+.btn{
+  background:#252525;border:2px solid #3a3a3a;border-radius:6px;
+  color:#ccc;font:bold 14px/1.3 'Courier New',monospace;
+  /* tall touch target – minimum 48px recommended by mobile HIG */
+  min-height:56px;padding:12px 4px;
+  cursor:pointer;
+  user-select:none;-webkit-user-select:none;
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+  transition:background 50ms,border-color 50ms,transform 50ms;
+}
+.btn:active,.btn.on{background:#3d3d3d;border-color:#888;transform:scale(0.93)}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="c" width="480" height="270"></canvas>
+  <div id="ctrl">
+    <button class="btn" id="bL">👟 왼발<br><small style="color:#777">A / ←</small></button>
+    <button class="btn" id="bJ">↑ 점프<br><small style="color:#777">Space / ↑</small></button>
+    <button class="btn" id="bR">오른발 👟<br><small style="color:#777">D / →</small></button>
+  </div>
+</div>
+<script>
+'use strict';
+const cv = document.getElementById('c');
+const cx = cv.getContext('2d');
+cx.imageSmoothingEnabled = false;
+
+const W=480, H=270, BK=16;
+const GY = H - BK*2; // ground top y = 238
+
+// Colour palette
+const K = {
+  // Sky phases
+  skyDT:'#5BA3C8', skyDB:'#A8D8F0',
+  skyET:'#C26820', skyEB:'#E8A050',
+  skyNT:'#0D1B2A', skyNB:'#1A3A5C',
+  // Ground
+  g1:'#5D9E2F', g2:'#4A7A25', g3:'#8B6040', g4:'#7A5030', g5:'#5A3820',
+  // Character
+  sk:'#FFCC99', hr:'#5C3D1E',
+  s1:'#3A7CC8', s2:'#2A5CA0',
+  p1:'#3B4FA8', p2:'#2B3880',
+  sh:'#3E2010', sh2:'#251208',
+  // Obstacles
+  st:'#9E9E9E', stD:'#6E6E6E', stH:'#C0C0C0',
+  wt:'#1976D2', wtH:'#42A5F5', wtD:'#0D47A1',
+  // Misc
+  sun:'#FFD700', sunG:'#FFF176',
+  cl:'#FFFFFF',  clS:'#DDEEFF',
+  hud:'rgba(0,0,0,0.5)',
+};
+
+// Interpolate two hex colours
+function lerpC(a, b, t) {
+  const p=x=>parseInt(x,16), h=x=>x.replace('#','');
+  const [r1,g1,b1]=[p(h(a).slice(0,2)),p(h(a).slice(2,4)),p(h(a).slice(4,6))];
+  const [r2,g2,b2]=[p(h(b).slice(0,2)),p(h(b).slice(2,4)),p(h(b).slice(4,6))];
+  return `rgb(${~~(r1+(r2-r1)*t)},${~~(g1+(g2-g1)*t)},${~~(b1+(b2-b1)*t)})`;
+}
+function px(x,y,w,h,c){cx.fillStyle=c;cx.fillRect(~~x,~~y,~~w,~~h)}
+
+// ── State ──────────────────────────────────────────────────────────────────
+let phase='start'; // start | play | dead
+let dist=0, best=+localStorage.getItem('hgbest')||0;
+let tick=0, scrollX=0, newBest=false;
+
+const pl={
+  y:GY-32, vy:0, grnd:true,
+  spd:0, foot:null, legF:0, legT:0,
+  lastL:0, lastR:0,
+};
+
+let obs=[], obsTimer=0;
+const clouds=[
+  {x:70,  y:32, w:60},
+  {x:220, y:18, w:76},
+  {x:380, y:46, w:50},
+];
+
+// ── Input ──────────────────────────────────────────────────────────────────
+function tapFoot(f){
+  if(phase!=='play'){startGame();return}
+  const now=Date.now();
+  const prev=f==='L'?pl.lastR:pl.lastL;
+  const gap=now-prev;
+  if(f!==pl.foot && gap<700){
+    const boost=Math.max(0.5,Math.min(1.3,380/Math.max(gap,1)));
+    pl.spd=Math.min(10,pl.spd+boost);
+  } else if(f===pl.foot){
+    pl.spd=Math.max(0,pl.spd-0.4);
+  } else {
+    pl.spd=Math.min(10,pl.spd+0.25);
+  }
+  if(f==='L')pl.lastL=now;else pl.lastR=now;
+  pl.foot=f;
+}
+
+function tapJump(){
+  if(phase!=='play'){startGame();return}
+  if(pl.grnd){pl.vy=-11.5;pl.grnd=false}
+}
+
+function startGame(){
+  phase='play'; dist=0; tick=0; scrollX=0;
+  obs=[]; obsTimer=0; newBest=false;
+  Object.assign(pl,{y:GY-32,vy:0,grnd:true,spd:3,foot:null,legF:0,legT:0,lastL:0,lastR:0});
+}
+
+// ── Obstacles ──────────────────────────────────────────────────────────────
+function spawn(){
+  const r=Math.random();
+  if(r<0.44)      obs.push({t:'s1',x:W+8,y:GY-BK,   w:BK,      h:BK    });
+  else if(r<0.68) obs.push({t:'s2',x:W+8,y:GY-BK*2, w:BK,      h:BK*2  });
+  else {
+    const ww=BK*2+~~(Math.random()*BK);
+    obs.push({t:'w', x:W+8,y:GY-7,      w:ww,      h:7     });
+  }
+}
+
+// ── Update ─────────────────────────────────────────────────────────────────
+function update(){
+  // Clouds move always
+  for(const cl of clouds){
+    cl.x-=0.3;
+    if(cl.x+cl.w<0)cl.x=W+cl.w+10;
+  }
+  if(phase!=='play')return;
+
+  tick++;
+  pl.spd=Math.max(0,pl.spd-0.022);
+  const sv=1.8+pl.spd*0.42+Math.min(2.5,tick/900); // scroll velocity
+  scrollX+=sv;
+  dist+=sv*0.38;
+
+  // Jump physics
+  if(!pl.grnd){
+    pl.y+=pl.vy;
+    pl.vy+=0.55;
+    if(pl.y>=GY-32){pl.y=GY-32;pl.vy=0;pl.grnd=true}
+  }
+
+  // Running leg animation
+  if(pl.spd>0.5){
+    const rate=Math.max(3,~~(20-pl.spd*1.5));
+    if(++pl.legT>=rate){pl.legT=0;pl.legF=(pl.legF+1)%4}
+  } else pl.legF=0;
+
+  // Obstacle spawning (interval shrinks as game progresses)
+  const interval=Math.max(52,128-tick/55-pl.spd*2.5);
+  if(++obsTimer>=interval){obsTimer=0;spawn()}
+  obs.forEach(o=>o.x-=sv);
+  obs=obs.filter(o=>o.x+o.w>-20);
+
+  // Collision (slightly forgiving hitbox)
+  const hx=58, hy=pl.y+4, hw=13, hh=26;
+  for(const o of obs){
+    if(hx+hw>o.x+2 && hx+2<o.x+o.w-2 && hy+hh>o.y+2 && hy+2<o.y+o.h-2){
+      newBest=dist>best;
+      if(newBest){best=~~dist;localStorage.setItem('hgbest',best)}
+      phase='dead';return;
+    }
+  }
+}
+
+// ── Draw ───────────────────────────────────────────────────────────────────
+function skyPhase(){return(phase==='play'?(tick/3000)%1:0)}
+
+function drawSky(){
+  const t=skyPhase();
+  let top,bot;
+  if(t<0.35){top=K.skyDT;bot=K.skyDB}
+  else if(t<0.5){const f=(t-0.35)/0.15;top=lerpC(K.skyDT,K.skyET,f);bot=lerpC(K.skyDB,K.skyEB,f)}
+  else if(t<0.65){const f=(t-0.5)/0.15;top=lerpC(K.skyET,K.skyNT,f);bot=lerpC(K.skyEB,K.skyNB,f)}
+  else{top=K.skyNT;bot=K.skyNB}
+  const g=cx.createLinearGradient(0,0,0,GY);
+  g.addColorStop(0,top);g.addColorStop(1,bot);
+  cx.fillStyle=g;cx.fillRect(0,0,W,GY);
+}
+
+function drawStars(){
+  const t=skyPhase();
+  if(t<0.5)return;
+  const a=Math.min(1,(t-0.5)/0.15)*0.85;
+  cx.fillStyle=`rgba(255,255,255,${a})`;
+  for(let i=0;i<45;i++){
+    cx.fillRect((i*139+17)%W,(i*97+11)%(GY-20),(i%4===0)?2:1,(i%4===0)?2:1);
+  }
+}
+
+function drawSun(){
+  const t=skyPhase();
+  if(t>0.72)return;
+  const a=t<0.55?1:Math.max(0,1-(t-0.55)/0.17);
+  const sx=(W*0.78-(scrollX*0.04)%W+W)%W;
+  const sy=28+Math.sin(t*Math.PI*0.85)*18;
+  cx.globalAlpha=a;
+  cx.fillStyle=K.sunG;cx.beginPath();cx.arc(sx,sy,20,0,Math.PI*2);cx.fill();
+  cx.fillStyle=K.sun;cx.beginPath();cx.arc(sx,sy,13,0,Math.PI*2);cx.fill();
+  cx.globalAlpha=1;
+}
+
+function drawClouds(){
+  const t=skyPhase();
+  const a=t>0.62?Math.max(0.08,1-(t-0.62)/0.15):1;
+  cx.globalAlpha=a;
+  for(const c of clouds){
+    const x=c.x,y=c.y,w=c.w;
+    px(x+~~(w*.2),y+5,~~(w*.6),8,K.clS);
+    px(x,y+8,w,10,K.clS);
+    px(x+~~(w*.1),y,~~(w*.8),13,K.cl);
+    px(x+~~(w*.3),y-5,~~(w*.4),9,K.cl);
+  }
+  cx.globalAlpha=1;
+}
+
+function drawGround(){
+  const ox=-(~~scrollX%BK);
+  for(let bx=ox-BK;bx<W+BK;bx+=BK){
+    const x=~~bx;
+    px(x,GY,   BK,4, K.g1); // grass top
+    px(x,GY+4, BK,4, K.g2); // grass mid
+    px(x,GY+8, BK,BK,K.g3); // dirt row 1
+    px(x,GY+BK+8,BK,BK,K.g4); // dirt row 2
+    px(x,GY+BK*2,BK,H-(GY+BK*2),K.g5); // deep dirt
+    // block grid lines
+    cx.fillStyle='rgba(0,0,0,0.18)';
+    cx.fillRect(x,GY,1,H-GY);
+    cx.fillRect(x,GY+8+BK,BK,1);
+  }
+}
+
+// Leg animation: [leftLegDY, rightLegDY, leftArmDY, rightArmDY]
+const LA=[[0,0,0,0],[3,-3,-3,3],[0,0,0,0],[-3,3,3,-3]];
+
+function drawPlayer(){
+  const bx=60, by=~~pl.y;
+  const la=LA[pl.legF];
+
+  // Shadow
+  cx.fillStyle='rgba(0,0,0,0.28)';cx.fillRect(bx-2,GY+1,20,4);
+
+  // Left leg + shoe
+  px(bx+1, by+19+la[0],5,9,K.p1);
+  px(bx+1, by+19+la[0],5,2,K.p2);
+  px(bx,   by+27+la[0],7,4,K.sh);
+  px(bx,   by+27+la[0],7,1,K.sh2);
+
+  // Right leg + shoe
+  px(bx+8, by+19+la[1],5,9,K.p1);
+  px(bx+8, by+19+la[1],5,2,K.p2);
+  px(bx+7, by+27+la[1],7,4,K.sh);
+  px(bx+7, by+27+la[1],7,1,K.sh2);
+
+  // Body
+  px(bx+2, by+10,10,9,K.s1);
+  px(bx+2, by+10,10,2,K.s2);
+
+  // Left arm
+  px(bx-2, by+11+la[2],4,7,K.s1);
+  px(bx-2, by+11+la[2],4,2,K.s2);
+  px(bx-2, by+17+la[2],4,3,K.sk);
+
+  // Right arm
+  px(bx+12,by+11+la[3],4,7,K.s1);
+  px(bx+12,by+11+la[3],4,2,K.s2);
+  px(bx+12,by+17+la[3],4,3,K.sk);
+
+  // Head
+  px(bx+1, by,   12,10,K.sk);
+  px(bx+1, by,   12,3, K.hr); // hair
+  px(bx,   by+2, 3, 8, K.hr); // sideburn
+
+  // Eyes
+  if(pl.grnd){
+    px(bx+3,by+4,3,3,'#fff');px(bx+8,by+4,3,3,'#fff');
+    px(bx+4,by+5,2,2,'#222');px(bx+9,by+5,2,2,'#222');
+  } else {
+    px(bx+3,by+5,3,1,'#222');px(bx+8,by+5,3,1,'#222');
+  }
+  px(bx+5,by+8,3,1,'#A05030'); // mouth
+}
+
+function drawObs(o){
+  if(o.t==='s1'||o.t==='s2'){
+    const n=o.t==='s2'?2:1;
+    for(let i=0;i<n;i++){
+      const by=o.y+i*BK;
+      px(o.x,by,   BK,BK,K.st);
+      px(o.x,by,   BK,2, K.stH);
+      px(o.x,by,   2, BK,K.stD);
+      px(o.x+3,by+4,4,2,K.stD);
+      px(o.x+9,by+10,4,2,K.stD);
+    }
+  } else {
+    px(o.x,o.y,o.w,o.h,K.wt);
+    px(o.x+3,o.y+1,o.w-6,2,K.wtH);
+    px(o.x,o.y,2,o.h,K.wtD);
+    px(o.x+o.w-2,o.y,2,o.h,K.wtD);
+  }
+}
+
+function drawHUD(){
+  px(6,6,162,40,K.hud);
+  cx.fillStyle='#fff';cx.font='bold 12px monospace';
+  cx.fillText(`거리  ${(dist/10).toFixed(1)}m`,14,22);
+  cx.fillStyle='#FFD700';
+  cx.fillText(`최고  ${(best/10).toFixed(1)}m`,14,38);
+
+  const bx=W-82,by=8;
+  px(bx,by,74,26,K.hud);
+  cx.fillStyle='#444';cx.fillRect(bx+2,by+14,70,8);
+  const r=pl.spd/10;
+  cx.fillStyle=r>0.75?'#FF4444':r>0.45?'#FFA500':'#44DD44';
+  cx.fillRect(bx+2,by+14,~~(70*r),8);
+  cx.fillStyle='#aaa';cx.font='9px monospace';
+  cx.fillText('속도',bx+4,by+11);
+}
+
+function overlay(title,lines,hint){
+  cx.fillStyle='rgba(0,0,0,0.65)';cx.fillRect(0,0,W,H);
+  cx.textAlign='center';
+  cx.fillStyle='#FFD700';cx.font='bold 30px monospace';
+  cx.fillText(title,W/2,H/2-52);
+  cx.fillStyle='#ddd';cx.font='13px monospace';
+  lines.forEach((l,i)=>cx.fillText(l,W/2,H/2-4+i*22));
+  if(Math.floor(Date.now()/550)%2===0){
+    cx.fillStyle='#88FF88';cx.font='bold 13px monospace';
+    cx.fillText(hint,W/2,H/2+60);
+  }
+  cx.textAlign='left';
+}
+
+// ── Loop ───────────────────────────────────────────────────────────────────
+function loop(){
+  update();
+  cx.clearRect(0,0,W,H);
+  drawSky();drawStars();drawSun();drawClouds();drawGround();
+  obs.forEach(drawObs);
+  drawPlayer();
+  if(phase==='play')drawHUD();
+  else if(phase==='start')overlay('한강런',
+    ['왼발·오른발을 교대로 탭해서 달리기','장애물은 점프로 피하세요!'],
+    '[ 탭하여 시작 ]');
+  else overlay('GAME OVER',
+    [`달린 거리  ${(dist/10).toFixed(1)}m`,
+     newBest?'🏆 신기록!':`최고 기록  ${(best/10).toFixed(1)}m`],
+    '[ 탭하여 다시하기 ]');
+  requestAnimationFrame(loop);
+}
+
+// ── Bindings ───────────────────────────────────────────────────────────────
+// Prevent context menu on long-press (mobile)
+document.addEventListener('contextmenu',e=>e.preventDefault());
+
+// Vibration helper (Android; iOS ignores silently)
+const vib=ms=>navigator.vibrate&&navigator.vibrate(ms);
+
+function bindBtn(id,fn){
+  const el=document.getElementById(id);
+  el.addEventListener('pointerdown',e=>{
+    e.preventDefault();
+    el.classList.add('on');
+    fn();
+    vib(18);
+  });
+  el.addEventListener('pointerup',  ()=>el.classList.remove('on'));
+  el.addEventListener('pointerout', ()=>el.classList.remove('on'));
+}
+
+bindBtn('bL',()=>tapFoot('L'));
+bindBtn('bR',()=>tapFoot('R'));
+bindBtn('bJ',()=>tapJump());
+
+cv.addEventListener('pointerdown',e=>{e.preventDefault();if(phase!=='play')startGame()});
+document.addEventListener('keydown',e=>{
+  switch(e.code){
+    case'KeyA':case'ArrowLeft': tapFoot('L');break;
+    case'KeyD':case'ArrowRight':tapFoot('R');break;
+    case'Space':case'ArrowUp':case'KeyW':e.preventDefault();tapJump();break;
+  }
+});
+
+loop();
+</script>
+</body>
+</html>
