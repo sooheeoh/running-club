@@ -328,6 +328,13 @@
     font-size: 11px; line-height: 1.6; color: var(--text-secondary);
     border-top: 1px solid var(--border); padding-top: 12px; margin-top: 20px;
   }
+  .field-hint { font-size: 11px; line-height: 1.5; color: var(--text-secondary); margin-top: 6px; }
+  .training-persuade {
+    font-size: 12px; line-height: 1.7; color: var(--text);
+    background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 12px;
+    padding: 12px 14px; margin: 8px 0 16px;
+  }
+  .training-persuade b { color: #92400E; }
 
   /* NEON TICKER */
   .neon-ticker {
@@ -541,8 +548,9 @@
     </div>
 
     <div class="modal-section">
-      <label class="form-label">나이</label>
+      <label class="form-label">나이 (만 나이)</label>
       <input type="number" class="form-input" id="tr-age" placeholder="예: 32" min="10" max="100">
+      <div class="field-hint">만 나이 = 생일이 지났으면 "올해 연도 − 태어난 연도", 아직 안 지났으면 거기서 1을 더 빼면 돼요.</div>
     </div>
 
     <div class="modal-section">
@@ -551,7 +559,7 @@
     </div>
 
     <div class="modal-section">
-      <label class="form-label">최근 레이스/타임트라이얼 기록</label>
+      <label class="form-label">최근 기록 (거리 + 걸린 시간)</label>
       <div class="form-row">
         <select class="form-input" id="tr-race-distance">
           <option value="5">5km</option>
@@ -561,8 +569,9 @@
           <option value="3">3km</option>
           <option value="1.5">1.5km</option>
         </select>
-        <input type="text" class="form-input" id="tr-race-time" placeholder="기록 (예: 25:30 또는 1:45:00)">
+        <input type="text" class="form-input" id="tr-race-time" placeholder="예: 25:30">
       </div>
+      <div class="field-hint">최근에 이 거리를 전력으로(혹은 대회에서) 뛰었을 때, <b>출발부터 도착까지 걸린 총 시간</b>이에요. 1km당 페이스가 아니라 완주 시간 전체예요. 예: 5km를 25분 30초에 뛰었다면 "25:30"</div>
     </div>
 
     <div class="modal-section">
@@ -1441,11 +1450,11 @@ function calcTraining() {
   // 1. 심박존 — Tanaka 공식
   const hrMax = Math.round(208 - 0.7 * age);
   const hrZoneDefs = [
-    { name: '회복', range: [0.50, 0.60], desc: '아주 가볍게 몸을 풀어주는 정도' },
-    { name: '쉬움', range: [0.60, 0.70], desc: '옆 사람과 대화하면서 뛸 수 있는 정도 (대부분 여기서 뛰면 돼요)' },
-    { name: '약간 힘듦', range: [0.70, 0.80], desc: '말은 가능하지만 슬슬 숨이 차는 정도' },
-    { name: '힘듦',   range: [0.80, 0.90], desc: '대화하기 힘들고 숨이 많이 가쁜 정도' },
-    { name: '매우 힘듦', range: [0.90, 1.00], desc: '전력 질주에 가까운, 짧게만 버틸 수 있는 정도' },
+    { name: 'Zone 1 · 회복', range: [0.50, 0.60], desc: '아주 가볍게 몸을 풀어주는 정도' },
+    { name: 'Zone 2 · 쉬움', range: [0.60, 0.70], desc: '옆 사람과 대화하면서 뛸 수 있는 정도 (대부분 여기서 뛰면 돼요)' },
+    { name: 'Zone 3 · 약간 힘듦', range: [0.70, 0.80], desc: '말은 가능하지만 슬슬 숨이 차는 정도' },
+    { name: 'Zone 4 · 힘듦',   range: [0.80, 0.90], desc: '대화하기 힘들고 숨이 많이 가쁜 정도' },
+    { name: 'Zone 5 · 매우 힘듦', range: [0.90, 1.00], desc: '전력 질주에 가까운, 짧게만 버틸 수 있는 정도' },
   ];
   const hrZones = hrZoneDefs.map(z => {
     let lo, hi;
@@ -1524,6 +1533,12 @@ function calcTraining() {
         <div class="stat-num">${hrMax}</div>
         <div class="stat-label">최대 심박수<br>(예상치, bpm)</div>
       </div>
+    </div>
+
+    <div class="training-persuade">
+      💬 <b>"이 정도로 숨차도 훨씬 더 잘 달릴 수 있는데?"</b> 싶으신가요? 맞아요, 오늘 하루는 더 빨리 뛸 수 있어요. 하지만 중요한 건 "오늘 얼마나 빠른가"가 아니라 "한 달, 두 달 뒤에 얼마나 빨라져 있는가"예요.<br><br>
+      세계 최상위 마라톤 선수들도 훈련의 <b>80%는 일부러 여유로운 페이스</b>로 뛰어요. 매번 숨차게 달리면 ① 회복이 안 돼서 다음 훈련의 질이 떨어지고 ② 부상 위험이 커지고 ③ 정작 중요한 '힘든 날' 훈련을 100% 소화하지 못해요.<br><br>
+      쉬운 날 제대로 쉬워야 힘든 날 더 강하게 훈련할 수 있고, 그게 쌓여야 체력 점수가 진짜로 올라가요. "느리게 뛰는 게 아니라 다음 단계를 위해 회복을 쌓는 중"이라고 생각해보세요.
     </div>
 
     <div class="detail-section-title">🏃 이렇게 뛰어보세요 (페이스 가이드)</div>
