@@ -1441,11 +1441,11 @@ function calcTraining() {
   // 1. 심박존 — Tanaka 공식
   const hrMax = Math.round(208 - 0.7 * age);
   const hrZoneDefs = [
-    { name: 'Zone 1 · 회복', range: [0.50, 0.60], desc: '완전 회복 조깅' },
-    { name: 'Zone 2 · 이지', range: [0.60, 0.70], desc: '대화 가능한 편한 페이스 (대부분의 거리)' },
-    { name: 'Zone 3 · 템포', range: [0.70, 0.80], desc: '마라톤 페이스 부근' },
-    { name: 'Zone 4 · 임계',   range: [0.80, 0.90], desc: '젖산역치 (LT) 인터벌' },
-    { name: 'Zone 5 · 인터벌', range: [0.90, 1.00], desc: 'VO2max 인터벌, 짧고 강하게' },
+    { name: '회복', range: [0.50, 0.60], desc: '아주 가볍게 몸을 풀어주는 정도' },
+    { name: '쉬움', range: [0.60, 0.70], desc: '옆 사람과 대화하면서 뛸 수 있는 정도 (대부분 여기서 뛰면 돼요)' },
+    { name: '약간 힘듦', range: [0.70, 0.80], desc: '말은 가능하지만 슬슬 숨이 차는 정도' },
+    { name: '힘듦',   range: [0.80, 0.90], desc: '대화하기 힘들고 숨이 많이 가쁜 정도' },
+    { name: '매우 힘듦', range: [0.90, 1.00], desc: '전력 질주에 가까운, 짧게만 버틸 수 있는 정도' },
   ];
   const hrZones = hrZoneDefs.map(z => {
     let lo, hi;
@@ -1462,11 +1462,11 @@ function calcTraining() {
   // 2. VDOT & 페이스존 — Daniels & Gilbert
   const vdot = calcVDOT(distanceKm, timeSec);
   const paceZoneDefs = [
-    { name: 'Easy (E)',       range: [0.59, 0.74], desc: '대부분의 러닝 — 80% 분배의 핵심' },
-    { name: 'Marathon (M)',   range: [0.75, 0.84], desc: '마라톤 목표 페이스' },
-    { name: 'Threshold (T)',  range: [0.83, 0.88], desc: '템포런 / LT 인터벌 (20~40분)' },
-    { name: 'Interval (I)',   range: [0.95, 1.00], desc: 'VO2max 인터벌 (3~5분 반복)' },
-    { name: 'Repetition (R)', range: [1.05, 1.10], desc: '단거리 반복 (200~400m, 스피드/폼)' },
+    { name: '🟢 쉬운 페이스',   range: [0.59, 0.74], desc: '대화 가능한 편한 속도. 전체 러닝의 80%는 이 페이스로!' },
+    { name: '🔵 마라톤 페이스', range: [0.75, 0.84], desc: '긴 거리를 끝까지 유지할 수 있는 속도' },
+    { name: '🟡 약간 힘든 페이스', range: [0.83, 0.88], desc: '20~40분 정도 버티면 숨이 차오르는 속도. 주 1회 정도' },
+    { name: '🟠 많이 힘든 페이스', range: [0.95, 1.00], desc: '3~5분씩 짧게 끊어 달리는 강한 훈련. 격주 1회 정도' },
+    { name: '🔴 전력 질주',      range: [1.05, 1.10], desc: '200~400m를 전력으로! 스피드와 폼 연습용' },
   ];
   const paceZones = paceZoneDefs.map(z => ({
     ...z,
@@ -1476,9 +1476,9 @@ function calcTraining() {
 
   // 3. 빈도/볼륨 — 경력 기반
   const levelPlan = {
-    beginner:     { freq: '주 3회', minMin: 75,  note: '걷기-달리기 인터벌부터 시작해도 좋아요. 인터벌(I/R)은 아직 도입하지 않거나 최소화하세요.' },
-    intermediate: { freq: '주 4~5회', minMin: 100, note: '주 1회 Threshold + 격주 1회 Interval 정도가 적당합니다.' },
-    advanced:     { freq: '주 5~6회', minMin: 150, note: '주 1~2회 Quality 세션(T/I) + 나머지는 모두 Easy로 채우세요.' },
+    beginner:     { freq: '주 3회', minMin: 75,  note: '걷기와 달리기를 섞어서 시작해도 좋아요. 아직 강한 훈련(많이 힘든 페이스)은 넣지 마세요.' },
+    intermediate: { freq: '주 4~5회', minMin: 100, note: '주 1번은 "약간 힘든 페이스"로, 격주로 1번은 "많이 힘든 페이스"를 넣어보세요.' },
+    advanced:     { freq: '주 5~6회', minMin: 150, note: '주 1~2번은 강한 훈련을, 나머지 날은 모두 쉬운 페이스로 가볍게 채우세요.' },
   };
   const plan = levelPlan[level];
 
@@ -1488,9 +1488,9 @@ function calcTraining() {
     const easyKm = (weeklyKm * 0.8).toFixed(1);
     const qualityKm = (weeklyKm * 0.2).toFixed(1);
     const intervalCapKm = (weeklyKm * 0.08).toFixed(1);
-    volumeNote = `현재 주간 ${weeklyKm}km 기준 → Easy 약 ${easyKm}km(80%) + Quality 약 ${qualityKm}km(20%). 그 중 Interval(I) 볼륨은 약 ${intervalCapKm}km(주간거리의 8%) 이내로 제한하세요.`;
+    volumeNote = `지금 주간 ${weeklyKm}km를 기준으로 보면 → 쉬운 페이스로 약 ${easyKm}km(전체의 80%), 나머지 약 ${qualityKm}km(20%)만 강도 높은 훈련으로 채우면 좋아요. 그 중에서도 "많이 힘든 페이스"는 ${intervalCapKm}km(주간 거리의 8%) 정도까지만!`;
   } else {
-    volumeNote = `훈련량 전체의 약 80%는 Zone 2 이하의 Easy 페이스로, 나머지 20%만 Threshold/Interval 같은 고강도로 채우는 것을 목표로 하세요(폴라라이즈드 분배). Interval(I) 볼륨은 주간 총 거리의 약 8% 이내로 제한하는 것이 권장됩니다.`;
+    volumeNote = `한 주 동안 달리는 양의 80%는 쉬운 페이스로, 나머지 20%만 힘든 훈련으로 채우는 걸 목표로 해보세요. 그 중에서도 "많이 힘든 페이스"는 한 주 전체 거리의 8% 정도까지만 추천해요.`;
   }
 
   const hrZonesHtml = hrZones.map(z => `
@@ -1514,40 +1514,40 @@ function calcTraining() {
   `).join('');
 
   const resultHtml = `
-    <div class="detail-section-title" style="margin-top:0">예상 체력 (VDOT)</div>
+    <div class="detail-section-title" style="margin-top:0">📈 내 현재 체력</div>
     <div class="stat-row" style="margin-bottom:14px">
       <div class="stat-card">
         <div class="stat-num">${vdot.toFixed(1)}</div>
-        <div class="stat-label">VDOT 점수</div>
+        <div class="stat-label">체력 점수<br>(높을수록 체력 좋음)</div>
       </div>
       <div class="stat-card">
         <div class="stat-num">${hrMax}</div>
-        <div class="stat-label">예상 최대심박 (Tanaka)</div>
+        <div class="stat-label">최대 심박수<br>(예상치, bpm)</div>
       </div>
     </div>
 
-    <div class="detail-section-title">페이스존 (Daniels VDOT)</div>
+    <div class="detail-section-title">🏃 이렇게 뛰어보세요 (페이스 가이드)</div>
     ${paceZonesHtml}
 
-    <div class="detail-section-title">심박존 (${restingHr ? 'Karvonen' : '%HRmax'})</div>
+    <div class="detail-section-title">❤️ 심박수로 강도 확인하기</div>
     ${hrZonesHtml}
 
-    <div class="detail-section-title">주간 훈련 구성 제안</div>
+    <div class="detail-section-title">📅 이번 주는 이렇게</div>
     <div class="zone-row">
       <div>
-        <div class="zone-name">권장 빈도</div>
+        <div class="zone-name">추천 운동 횟수</div>
         <div class="zone-desc">${plan.note}</div>
       </div>
       <div class="zone-value">${plan.freq}</div>
     </div>
     <div class="training-note">
       ${volumeNote}<br><br>
-      ⚠️ 부상 가드레일: 주간 총량을 점진적으로 늘리는 것보다, <b>한 번의 런이 평소 대비 과도하게 길거나 빠르지 않은지</b>가 더 중요한 위험 신호입니다. 평소보다 훨씬 긴 롱런이나 갑작스런 페이스 업을 피하세요.<br><br>
-      🔁 VDOT와 페이스존은 4~8주마다 새 기록으로 재계산하는 것을 권장합니다.
+      ⚠️ 부상 조심: 매주 거리를 조금씩 늘리는 것보다, <b>한 번 뛸 때 평소보다 갑자기 너무 길게나 너무 빠르게 뛰지 않는 것</b>이 더 중요해요. 오늘 컨디션이 좋다고 갑자기 욕심내지 마세요.<br><br>
+      🚀 더 빨라지고 싶다면? 지금 알려드린 페이스대로 4~8주 꾸준히 달려보세요. 몸이 적응하면 체력 점수가 자연스럽게 올라가고, 그때 최근 기록을 다시 입력하면 더 빨라진 페이스로 업데이트해줄게요. 성장은 천천히, 꾸준히가 답이에요!
     </div>
 
     <div class="training-disclaimer">
-      이 계산 결과는 일반적인 트레이닝 가이드이며 의학적 조언이 아닙니다. 운동 중 통증, 어지럼증, 가슴 답답함 등의 증상이 있다면 즉시 운동을 중단하고 전문가와 상담하세요.
+      이 결과는 일반적인 운동 가이드일 뿐, 의학적인 진단이나 처방이 아니에요. 운동 중에 통증, 어지러움, 가슴 답답함 같은 증상이 있다면 바로 멈추고 전문가와 상담하세요.
     </div>
   `;
 
