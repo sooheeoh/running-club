@@ -312,6 +312,23 @@
   .lb-count { font-size: 11px; color: var(--text-secondary); text-align: right; }
   .badge-legend { background: #FEF3C7; color: #92400E; font-size: 10px; padding: 2px 7px; border-radius: 10px; font-weight: 700; }
 
+  /* TRAINING PRESCRIPTION */
+  .zone-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    background: var(--bg); border-radius: 12px; padding: 10px 14px; margin-bottom: 8px;
+  }
+  .zone-name { font-size: 13px; font-weight: 700; }
+  .zone-desc { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+  .zone-value { font-size: 14px; font-weight: 700; color: var(--primary); text-align: right; white-space: nowrap; }
+  .training-note {
+    font-size: 12px; line-height: 1.6; color: var(--text-secondary);
+    background: var(--primary-light); border-radius: 12px; padding: 12px 14px; margin-top: 8px;
+  }
+  .training-disclaimer {
+    font-size: 11px; line-height: 1.6; color: var(--text-secondary);
+    border-top: 1px solid var(--border); padding-top: 12px; margin-top: 20px;
+  }
+
   /* NEON TICKER */
   .neon-ticker {
     background: #0a0a0a;
@@ -375,6 +392,7 @@
     <div style="display:flex; align-items:center; gap:6px;">
       <h1>🏃‍♀️ 한강런 클럽</h1>
       <button class="analytics-btn" onclick="openAnalytics()" title="애널리틱스" aria-label="애널리틱스">📊</button>
+      <button class="analytics-btn" onclick="openTraining()" title="훈련 처방" aria-label="훈련 처방">🧮</button>
       <button class="analytics-btn" onclick="openGame()" title="한강런 게임" aria-label="게임">🕹️</button>
     </div>
     <div class="view-toggle">
@@ -510,6 +528,60 @@
       <button class="analytics-tab" id="tab-month" onclick="switchAnalyticsTab('month')">이번 달</button>
     </div>
     <div id="analytics-content"></div>
+  </div>
+</div>
+
+<!-- TRAINING PRESCRIPTION MODAL -->
+<div class="modal-overlay" id="training-modal-overlay" onclick="handleOverlayClick(event, 'training-modal-overlay')">
+  <div class="modal" id="training-modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" style="margin-bottom:4px">🧮 훈련 처방 계산기</div>
+    <div style="font-size:12px; color:var(--text-secondary); margin-bottom:18px;">
+      최근 레이스 기록을 입력하면 페이스존 · 심박존 · 주간 훈련 구성을 계산해줘요.
+    </div>
+
+    <div class="modal-section">
+      <label class="form-label">나이</label>
+      <input type="number" class="form-input" id="tr-age" placeholder="예: 32" min="10" max="100">
+    </div>
+
+    <div class="modal-section">
+      <label class="form-label">안정시 심박수 (선택, bpm)</label>
+      <input type="number" class="form-input" id="tr-resting-hr" placeholder="예: 60 (모르면 비워두세요)" min="30" max="120">
+    </div>
+
+    <div class="modal-section">
+      <label class="form-label">최근 레이스/타임트라이얼 기록</label>
+      <div class="form-row">
+        <select class="form-input" id="tr-race-distance">
+          <option value="5">5km</option>
+          <option value="10">10km</option>
+          <option value="21.0975">하프마라톤 (21.1km)</option>
+          <option value="42.195">풀마라톤 (42.2km)</option>
+          <option value="3">3km</option>
+          <option value="1.5">1.5km</option>
+        </select>
+        <input type="text" class="form-input" id="tr-race-time" placeholder="기록 (예: 25:30 또는 1:45:00)">
+      </div>
+    </div>
+
+    <div class="modal-section">
+      <label class="form-label">현재 훈련 경력</label>
+      <select class="form-input" id="tr-level">
+        <option value="beginner">입문 (주 0~2회 러닝)</option>
+        <option value="intermediate" selected>중급 (주 3~4회 러닝)</option>
+        <option value="advanced">상급 (주 5회 이상 러닝)</option>
+      </select>
+    </div>
+
+    <div class="modal-section">
+      <label class="form-label">현재 주간 평균 러닝 거리 (선택, km)</label>
+      <input type="number" class="form-input" id="tr-weekly-km" placeholder="예: 30 (모르면 비워두세요)" min="0">
+    </div>
+
+    <button class="btn-primary" onclick="calcTraining()">처방 계산하기</button>
+
+    <div id="training-result" style="margin-top:24px; display:none;"></div>
   </div>
 </div>
 
@@ -1288,6 +1360,200 @@ function dustIndexPM10(pm10) {
   if (pm10 <= 80)  return { icon: '🟡', label: '보통' };
   if (pm10 <= 150) return { icon: '🟠', label: '나쁨' };
   return              { icon: '🔴', label: '매우나쁨' };
+}
+
+// ─── 훈련 처방 (TRAINING PRESCRIPTION) ──────────────────────────────
+// 근거:
+// - 심박존: Tanaka et al. 2001 (HRmax = 208 - 0.7×나이), 안정시심박 입력 시 Karvonen(여유심박) 방식
+// - 페이스존: Daniels & Gilbert VDOT 공식 (Daniels' Running Formula)
+// - 강도 분배: Seiler 80/20 폴라라이즈드, 인터벌(I)은 주간거리의 ~8% 이내, VDOT는 4~8주마다 재측정 권장
+// - 총량 하한: WHO 2020 가이드라인(고강도 주 75~150분)
+
+function openTraining() {
+  document.getElementById('training-result').style.display = 'none';
+  openModal('training-modal-overlay');
+}
+
+// "25:30" 또는 "1:45:00" → 초
+function parseTimeToSeconds(str) {
+  const parts = str.trim().split(':').map(s => Number(s));
+  if (parts.some(isNaN) || parts.length < 2 || parts.length > 3) return null;
+  let sec = 0;
+  for (const p of parts) sec = sec * 60 + p;
+  return sec > 0 ? sec : null;
+}
+
+function secToPace(secPerKm) {
+  const m = Math.floor(secPerKm / 60);
+  const s = Math.round(secPerKm % 60);
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+function secToHMS(totalSec) {
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = Math.round(totalSec % 60);
+  if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+// Daniels & Gilbert 회귀식: VO2 = -4.60 + 0.182258v + 0.000104v² (v = m/min)
+function vo2FromVelocity(v) {
+  return -4.60 + 0.182258 * v + 0.000104 * v * v;
+}
+// 위 식의 역함수: VO2 → v (m/min)
+function velocityFromVo2(vo2) {
+  const a = 0.000104, b = 0.182258, c = -(4.60 + vo2);
+  return (-b + Math.sqrt(b * b - 4 * a * c)) / (2 * a);
+}
+// %VO2max 사용 비율 (레이스 시간이 길수록 VO2max를 덜 쓴다)
+function pctVo2maxFromTime(tMin) {
+  return 0.8 + 0.1894393 * Math.exp(-0.012778 * tMin) + 0.2989558 * Math.exp(-0.1932605 * tMin);
+}
+function calcVDOT(distanceKm, timeSec) {
+  const v = (distanceKm * 1000) / (timeSec / 60); // m/min
+  const tMin = timeSec / 60;
+  return vo2FromVelocity(v) / pctVo2maxFromTime(tMin);
+}
+// VDOT와 강도(%VO2max)로부터 km당 페이스(초) 계산
+function paceSecPerKmAtIntensity(vdot, pct) {
+  const v = velocityFromVo2(vdot * pct); // m/min
+  return 1000 / v * 60;
+}
+
+function calcTraining() {
+  const age = Number(document.getElementById('tr-age').value);
+  const restingHr = Number(document.getElementById('tr-resting-hr').value) || null;
+  const distanceKm = Number(document.getElementById('tr-race-distance').value);
+  const timeSec = parseTimeToSeconds(document.getElementById('tr-race-time').value);
+  const level = document.getElementById('tr-level').value;
+  const weeklyKm = Number(document.getElementById('tr-weekly-km').value) || null;
+
+  if (!age || age < 10 || age > 100) {
+    showToast('나이를 정확히 입력해주세요');
+    return;
+  }
+  if (!timeSec) {
+    showToast('레이스 기록을 mm:ss 또는 h:mm:ss 형식으로 입력해주세요');
+    return;
+  }
+
+  // 1. 심박존 — Tanaka 공식
+  const hrMax = Math.round(208 - 0.7 * age);
+  const hrZoneDefs = [
+    { name: 'Zone 1 · 회복', range: [0.50, 0.60], desc: '완전 회복 조깅' },
+    { name: 'Zone 2 · 이지', range: [0.60, 0.70], desc: '대화 가능한 편한 페이스 (대부분의 거리)' },
+    { name: 'Zone 3 · 템포', range: [0.70, 0.80], desc: '마라톤 페이스 부근' },
+    { name: 'Zone 4 · 임계',   range: [0.80, 0.90], desc: '젖산역치 (LT) 인터벌' },
+    { name: 'Zone 5 · 인터벌', range: [0.90, 1.00], desc: 'VO2max 인터벌, 짧고 강하게' },
+  ];
+  const hrZones = hrZoneDefs.map(z => {
+    let lo, hi;
+    if (restingHr) { // Karvonen (여유심박)
+      lo = Math.round(restingHr + (hrMax - restingHr) * z.range[0]);
+      hi = Math.round(restingHr + (hrMax - restingHr) * z.range[1]);
+    } else { // %HRmax
+      lo = Math.round(hrMax * z.range[0]);
+      hi = Math.round(hrMax * z.range[1]);
+    }
+    return { ...z, lo, hi };
+  });
+
+  // 2. VDOT & 페이스존 — Daniels & Gilbert
+  const vdot = calcVDOT(distanceKm, timeSec);
+  const paceZoneDefs = [
+    { name: 'Easy (E)',       range: [0.59, 0.74], desc: '대부분의 러닝 — 80% 분배의 핵심' },
+    { name: 'Marathon (M)',   range: [0.75, 0.84], desc: '마라톤 목표 페이스' },
+    { name: 'Threshold (T)',  range: [0.83, 0.88], desc: '템포런 / LT 인터벌 (20~40분)' },
+    { name: 'Interval (I)',   range: [0.95, 1.00], desc: 'VO2max 인터벌 (3~5분 반복)' },
+    { name: 'Repetition (R)', range: [1.05, 1.10], desc: '단거리 반복 (200~400m, 스피드/폼)' },
+  ];
+  const paceZones = paceZoneDefs.map(z => ({
+    ...z,
+    fastSec: paceSecPerKmAtIntensity(vdot, z.range[1]),
+    slowSec: paceSecPerKmAtIntensity(vdot, z.range[0]),
+  }));
+
+  // 3. 빈도/볼륨 — 경력 기반
+  const levelPlan = {
+    beginner:     { freq: '주 3회', minMin: 75,  note: '걷기-달리기 인터벌부터 시작해도 좋아요. 인터벌(I/R)은 아직 도입하지 않거나 최소화하세요.' },
+    intermediate: { freq: '주 4~5회', minMin: 100, note: '주 1회 Threshold + 격주 1회 Interval 정도가 적당합니다.' },
+    advanced:     { freq: '주 5~6회', minMin: 150, note: '주 1~2회 Quality 세션(T/I) + 나머지는 모두 Easy로 채우세요.' },
+  };
+  const plan = levelPlan[level];
+
+  // 4. 강도 분배 (80/20) + 인터벌 볼륨 가드레일
+  let volumeNote = '';
+  if (weeklyKm) {
+    const easyKm = (weeklyKm * 0.8).toFixed(1);
+    const qualityKm = (weeklyKm * 0.2).toFixed(1);
+    const intervalCapKm = (weeklyKm * 0.08).toFixed(1);
+    volumeNote = `현재 주간 ${weeklyKm}km 기준 → Easy 약 ${easyKm}km(80%) + Quality 약 ${qualityKm}km(20%). 그 중 Interval(I) 볼륨은 약 ${intervalCapKm}km(주간거리의 8%) 이내로 제한하세요.`;
+  } else {
+    volumeNote = `훈련량 전체의 약 80%는 Zone 2 이하의 Easy 페이스로, 나머지 20%만 Threshold/Interval 같은 고강도로 채우는 것을 목표로 하세요(폴라라이즈드 분배). Interval(I) 볼륨은 주간 총 거리의 약 8% 이내로 제한하는 것이 권장됩니다.`;
+  }
+
+  const hrZonesHtml = hrZones.map(z => `
+    <div class="zone-row">
+      <div>
+        <div class="zone-name">${z.name}</div>
+        <div class="zone-desc">${z.desc}</div>
+      </div>
+      <div class="zone-value">${z.lo}~${z.hi} bpm</div>
+    </div>
+  `).join('');
+
+  const paceZonesHtml = paceZones.map(z => `
+    <div class="zone-row">
+      <div>
+        <div class="zone-name">${z.name}</div>
+        <div class="zone-desc">${z.desc}</div>
+      </div>
+      <div class="zone-value">${secToPace(z.fastSec)}~${secToPace(z.slowSec)} /km</div>
+    </div>
+  `).join('');
+
+  const resultHtml = `
+    <div class="detail-section-title" style="margin-top:0">예상 체력 (VDOT)</div>
+    <div class="stat-row" style="margin-bottom:14px">
+      <div class="stat-card">
+        <div class="stat-num">${vdot.toFixed(1)}</div>
+        <div class="stat-label">VDOT 점수</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">${hrMax}</div>
+        <div class="stat-label">예상 최대심박 (Tanaka)</div>
+      </div>
+    </div>
+
+    <div class="detail-section-title">페이스존 (Daniels VDOT)</div>
+    ${paceZonesHtml}
+
+    <div class="detail-section-title">심박존 (${restingHr ? 'Karvonen' : '%HRmax'})</div>
+    ${hrZonesHtml}
+
+    <div class="detail-section-title">주간 훈련 구성 제안</div>
+    <div class="zone-row">
+      <div>
+        <div class="zone-name">권장 빈도</div>
+        <div class="zone-desc">${plan.note}</div>
+      </div>
+      <div class="zone-value">${plan.freq}</div>
+    </div>
+    <div class="training-note">
+      ${volumeNote}<br><br>
+      ⚠️ 부상 가드레일: 주간 총량을 점진적으로 늘리는 것보다, <b>한 번의 런이 평소 대비 과도하게 길거나 빠르지 않은지</b>가 더 중요한 위험 신호입니다. 평소보다 훨씬 긴 롱런이나 갑작스런 페이스 업을 피하세요.<br><br>
+      🔁 VDOT와 페이스존은 4~8주마다 새 기록으로 재계산하는 것을 권장합니다.
+    </div>
+
+    <div class="training-disclaimer">
+      이 계산 결과는 일반적인 트레이닝 가이드이며 의학적 조언이 아닙니다. 운동 중 통증, 어지럼증, 가슴 답답함 등의 증상이 있다면 즉시 운동을 중단하고 전문가와 상담하세요.
+    </div>
+  `;
+
+  const resultEl = document.getElementById('training-result');
+  resultEl.innerHTML = resultHtml;
+  resultEl.style.display = 'block';
 }
 
 // ─── ANALYTICS ───────────────────────────────────────────────────
