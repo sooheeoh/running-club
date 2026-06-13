@@ -874,7 +874,7 @@ function renderCalendar() {
   }
 
   const monthStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}`;
-  const monthRuns = runs.filter(r => r.date && r.date.startsWith(monthStr)).sort((a,b) => a.date.localeCompare(b.date));
+  const monthRuns = runs.filter(r => r.date && r.date.startsWith(monthStr)).sort((a,b) => b.date.localeCompare(a.date));
   renderRunsInto('cal-runs-list', monthRuns, monthRuns.length === 0 ? '이번 달 러닝 일정이 없어요' : null);
 }
 
