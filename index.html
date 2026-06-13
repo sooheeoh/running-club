@@ -398,8 +398,7 @@
     <div style="display:flex; align-items:center; gap:6px;">
       <h1>🏃‍♀️ 한강런 클럽</h1>
       <button class="analytics-btn" onclick="openAnalytics()" title="애널리틱스" aria-label="애널리틱스">📊</button>
-      <button class="analytics-btn" onclick="openTraining()" title="훈련 처방" aria-label="훈련 처방">🧮</button>
-      <button class="analytics-btn" onclick="openGame()" title="한강런 게임" aria-label="게임">🕹️</button>
+      <button class="analytics-btn" onclick="openTraining()" title="훈련 처방" aria-label="훈련 처방">⏱️</button>
     </div>
     <div class="view-toggle">
       <button class="view-btn active" id="btn-cal" onclick="setView('calendar')">달력</button>
@@ -541,7 +540,7 @@
 <div class="modal-overlay" id="training-modal-overlay" onclick="handleOverlayClick(event, 'training-modal-overlay')">
   <div class="modal" id="training-modal">
     <div class="modal-handle"></div>
-    <div class="modal-title" style="margin-bottom:4px">🧮 훈련 처방 계산기</div>
+    <div class="modal-title" style="margin-bottom:4px">⏱️ 훈련 처방 계산기</div>
     <div style="font-size:12px; color:var(--text-secondary); margin-bottom:18px;">
       최근 레이스 기록을 입력하면 페이스존 · 심박존 · 주간 훈련 구성을 계산해줘요.
     </div>
@@ -588,19 +587,6 @@
     <button class="btn-primary" onclick="calcTraining()">처방 계산하기</button>
 
     <div id="training-result" style="margin-top:24px; display:none;"></div>
-  </div>
-</div>
-
-<!-- GAME MODAL -->
-<div class="modal-overlay" id="game-modal-overlay" onclick="handleOverlayClick(event, 'game-modal-overlay')">
-  <div class="modal" id="game-modal" style="padding:0; height:94vh; height:94dvh; max-height:94dvh; overflow:hidden; display:flex; flex-direction:column;">
-    <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 8px 8px 16px;">
-      <div class="modal-title" style="margin:0; font-size:16px;">🕹️ 한강런 게임</div>
-      <button onclick="closeModal('game-modal-overlay')" aria-label="닫기"
-        style="background:none; border:none; font-size:22px; line-height:1; color:var(--text-secondary); cursor:pointer; padding:6px 10px;">✕</button>
-    </div>
-    <iframe id="game-frame" title="한강런 게임" allow="fullscreen"
-      style="flex:1; width:100%; border:0; background:#0b0b0b; display:block;"></iframe>
   </div>
 </div>
 
@@ -1594,20 +1580,6 @@ function switchAnalyticsTab(tab) {
   renderAnalyticsContent();
 }
 
-// 🕹️ 게임: 이번 달 1·2·3등 실제 이름을 캐릭터로 넘겨서 game.html을 모달로 띄운다
-function openGame() {
-  const monthStr = new Date().toISOString().slice(0, 7);
-  const completedMonth = runs.filter(isCompleted).filter(r => r.date && r.date.startsWith(monthStr));
-  const top3 = buildLeaderboard(completedMonth).slice(0, 3);
-  const q = new URLSearchParams();
-  if (top3[0]) q.set('n1', top3[0].name);
-  if (top3[1]) q.set('n2', top3[1].name);
-  if (top3[2]) q.set('n3', top3[2].name);
-  const qs = q.toString();
-  document.getElementById('game-frame').src = 'game.html' + (qs ? '?' + qs : '');
-  openModal('game-modal-overlay');
-}
-
 function buildLeaderboard(filteredRuns) {
   const stats = {};
   filteredRuns.forEach(run => {
@@ -1675,11 +1647,6 @@ function openModal(overlayId) {
 function closeModal(overlayId) {
   document.getElementById(overlayId).classList.remove('open');
   document.body.style.overflow = '';
-  // 게임 모달을 닫으면 iframe을 비워 게임 루프를 멈춘다
-  if (overlayId === 'game-modal-overlay') {
-    const f = document.getElementById('game-frame');
-    if (f) f.src = 'about:blank';
-  }
 }
 function handleOverlayClick(e, overlayId) {
   if (e.target.id === overlayId) closeModal(overlayId);
