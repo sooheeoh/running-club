@@ -1121,7 +1121,9 @@ function removeExistingPhoto(i) {
 async function saveRun() {
   const title = document.getElementById('f-title').value.trim();
   const date = document.getElementById('f-date').value;
+  const distanceVal = parseFloat(document.getElementById('f-distance').value);
   if (!title || !date) { showToast('제목과 날짜는 필수예요!'); return; }
+  if (!distanceVal || distanceVal <= 0) { showToast('거리를 입력해주세요!'); return; }
 
   const btn = document.getElementById('save-btn');
   btn.disabled = true;
