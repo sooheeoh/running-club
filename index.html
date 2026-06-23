@@ -862,7 +862,11 @@ function renderCalendar() {
   }
 
   const monthStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}`;
-  const monthRuns = runs.filter(r => r.date && r.date.startsWith(monthStr)).sort((a,b) => b.date.localeCompare(a.date));
+  const todayStr = new Date().toISOString().slice(0,10);
+  const monthRunsAll = runs.filter(r => r.date && r.date.startsWith(monthStr));
+  const upcomingRuns = monthRunsAll.filter(r => r.date >= todayStr).sort((a,b) => a.date.localeCompare(b.date));
+  const pastRuns = monthRunsAll.filter(r => r.date < todayStr).sort((a,b) => b.date.localeCompare(a.date));
+  const monthRuns = [...upcomingRuns, ...pastRuns];
   renderRunsInto('cal-runs-list', monthRuns, monthRuns.length === 0 ? '이번 달 러닝 일정이 없어요' : null);
 }
 
