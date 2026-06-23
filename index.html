@@ -43,12 +43,12 @@
   }
   .header-top { display: flex; align-items: center; justify-content: space-between; }
   .header h1 { font-size: 20px; font-weight: 700; }
-  .view-toggle { display: flex; gap: 4px; background: var(--bg); border-radius: 8px; padding: 3px; }
-  .view-btn {
-    border: none; background: transparent; padding: 6px 12px; border-radius: 6px;
-    font-size: 13px; cursor: pointer; color: var(--text-secondary); transition: all .2s;
+  .load-more-btn {
+    display: block; width: calc(100% - 8px); margin: 12px 4px 4px; padding: 12px;
+    border: 1px solid var(--border); background: var(--card); border-radius: 12px;
+    font-size: 14px; font-weight: 600; color: var(--primary); cursor: pointer; transition: all .2s;
   }
-  .view-btn.active { background: var(--card); color: var(--primary); font-weight: 600; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+  .load-more-btn:active { background: var(--bg); }
 
   /* CALENDAR */
   .calendar-wrap { padding: 16px 20px; }
@@ -129,23 +129,6 @@
     width: 80px; height: 80px; border-radius: 10px; object-fit: cover;
     cursor: pointer; border: 1px solid var(--border);
   }
-
-  /* HERO CARD */
-  .hero-wrap { padding: 16px 16px 0; }
-  .hero-card {
-    background: linear-gradient(135deg, #1D4ED8 0%, #3B82F6 100%);
-    border-radius: 20px; padding: 20px; color: white; margin-bottom: 8px;
-    cursor: pointer; position: relative; overflow: hidden;
-  }
-  .hero-card::after {
-    content: '🏃‍♀️'; position: absolute; right: -8px; bottom: -8px;
-    font-size: 80px; opacity: 0.2;
-  }
-  .hero-label { font-size: 11px; font-weight: 700; opacity: 0.8; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
-  .hero-title { font-size: 22px; font-weight: 800; margin-bottom: 10px; }
-  .hero-meta { display: flex; flex-wrap: wrap; gap: 10px; }
-  .hero-meta-item { display: flex; align-items: center; gap: 4px; font-size: 13px; opacity: 0.9; }
-  .hero-weather { margin-top: 12px; padding: 10px 12px; background: rgba(255,255,255,0.2); border-radius: 10px; display: flex; gap: 14px; flex-wrap: wrap; }
 
   /* FAB */
   .fab {
@@ -400,10 +383,6 @@
       <button class="analytics-btn" onclick="openAnalytics()" title="애널리틱스" aria-label="애널리틱스">📊</button>
       <button class="analytics-btn" onclick="openTraining()" title="훈련 처방" aria-label="훈련 처방">⏱️</button>
     </div>
-    <div class="view-toggle">
-      <button class="view-btn active" id="btn-cal" onclick="setView('calendar')">달력</button>
-      <button class="view-btn" id="btn-list" onclick="setView('list')">목록</button>
-    </div>
   </div>
 </div>
 
@@ -423,11 +402,6 @@
     <div class="cal-grid" id="cal-grid"></div>
   </div>
   <div class="list-wrap" id="cal-runs-list"></div>
-</div>
-
-<div id="view-list" style="display:none">
-  <div class="hero-wrap" id="hero-section"></div>
-  <div class="list-wrap" id="all-runs-list"></div>
 </div>
 
 <!-- FAB -->
@@ -706,7 +680,7 @@ firebase.analytics();
 
 // ─── STATE ───────────────────────────────────────────────────────
 let runs = [];
-let currentView = 'calendar';
+let pastRunsLimit = 3;
 let calYear, calMonth;
 let formParticipants = [];
 let formPhotos = [];
@@ -797,20 +771,9 @@ function openAddForm() {
   openModal('add-modal-overlay');
 }
 
-// ─── VIEW TOGGLE ─────────────────────────────────────────────────
-function setView(v) {
-  currentView = v;
-  document.getElementById('view-calendar').style.display = v === 'calendar' ? '' : 'none';
-  document.getElementById('view-list').style.display = v === 'list' ? '' : 'none';
-  document.getElementById('btn-cal').classList.toggle('active', v === 'calendar');
-  document.getElementById('btn-list').classList.toggle('active', v === 'list');
-  renderAll();
-}
-
 function renderAll() {
   renderTicker(); // 런 데이터가 바뀌면 전광판 문장도 갱신
-  if (currentView === 'calendar') renderCalendar();
-  else renderList();
+  renderCalendar();
 }
 
 // ─── CALENDAR ────────────────────────────────────────────────────
@@ -861,13 +824,40 @@ function renderCalendar() {
     grid.innerHTML += `<div class="cal-cell other-month">${i}</div>`;
   }
 
-  const monthStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}`;
-  const todayStr = new Date().toISOString().slice(0,10);
-  const monthRunsAll = runs.filter(r => r.date && r.date.startsWith(monthStr));
-  const upcomingRuns = monthRunsAll.filter(r => r.date >= todayStr).sort((a,b) => a.date.localeCompare(b.date));
-  const pastRuns = monthRunsAll.filter(r => r.date < todayStr).sort((a,b) => b.date.localeCompare(a.date));
-  const monthRuns = [...upcomingRuns, ...pastRuns];
-  renderRunsInto('cal-runs-list', monthRuns, monthRuns.length === 0 ? '이번 달 러닝 일정이 없어요' : null);
+  renderCalRunsList();
+}
+
+// 달력 하단 목록: 예정된 런(가까운 순) → 지난 런(최신 순, 3개씩 더 보기)
+function renderCalRunsList() {
+  const today = new Date().toISOString().slice(0,10);
+  const upcoming = runs.filter(r => r.date > today || (r.date === today && !isCompleted(r))).sort((a,b) => a.date.localeCompare(b.date));
+  const done = runs.filter(r => r.date === today && isCompleted(r));
+  const past = [...done, ...runs.filter(r => r.date < today)].sort((a,b) => b.date.localeCompare(a.date));
+
+  const el = document.getElementById('cal-runs-list');
+  el.innerHTML = '';
+
+  if (upcoming.length === 0 && past.length === 0) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">🏃‍♀️</div><div class="empty-text">아직 러닝 일정이 없어요<br>+ 버튼으로 추가해보세요!</div></div>`;
+    return;
+  }
+
+  if (upcoming.length > 0) {
+    el.insertAdjacentHTML('beforeend', `<div class="section-title">예정된 런</div>`);
+    upcoming.forEach(r => el.appendChild(buildRunCard(r)));
+  }
+
+  if (past.length > 0) {
+    el.insertAdjacentHTML('beforeend', `<div class="section-title">지난 런</div>`);
+    past.slice(0, pastRunsLimit).forEach(r => el.appendChild(buildRunCard(r)));
+    if (past.length > pastRunsLimit) {
+      const btn = document.createElement('button');
+      btn.className = 'load-more-btn';
+      btn.textContent = `지난 런 더 보기 (${past.length - pastRunsLimit})`;
+      btn.onclick = () => { pastRunsLimit += 3; renderCalRunsList(); };
+      el.appendChild(btn);
+    }
+  }
 }
 
 function filterCalendarByDate(dateStr) {
@@ -878,61 +868,6 @@ function filterCalendarByDate(dateStr) {
 }
 
 // ─── LIST VIEW ───────────────────────────────────────────────────
-async function renderList() {
-  const today = new Date().toISOString().slice(0,10);
-  const upcoming = runs.filter(r => r.date > today || (r.date === today && !isCompleted(r))).sort((a,b) => a.date.localeCompare(b.date));
-  const done = runs.filter(r => r.date === today && isCompleted(r));
-  const past = [...done, ...runs.filter(r => r.date < today)].sort((a,b) => b.date.localeCompare(a.date));
-
-  const heroSection = document.getElementById('hero-section');
-  if (upcoming.length > 0) {
-    const next = upcoming[0];
-    let weatherHtml = '';
-    const wx = await fetchWeatherAndDust(next.date, next.time);
-    if (wx) {
-      const di = dustIndex(wx.pm25);
-      const wc = weatherCondition(wx.weatherCode);
-      weatherHtml = `
-        <div class="hero-weather">
-          <span>${wc.icon} ${wc.label}</span>
-          <span>🌡 ${wx.temp}°C</span>
-          <span>🌧 ${wx.rain}%</span>
-          <span>💨 ${di.icon} ${di.label}</span>
-        </div>`;
-    }
-    heroSection.innerHTML = `
-      <div class="hero-card" onclick="openDetailById('${next.id}')">
-        <div class="hero-label">다음 런</div>
-        <div class="hero-title">${esc(next.title)}</div>
-        <div class="hero-meta">
-          <span class="hero-meta-item">📅 ${formatDate(next.date)}</span>
-          ${next.time ? `<span class="hero-meta-item">🕐 ${next.time}</span>` : ''}
-          ${next.location ? `<span class="hero-meta-item">📍 ${esc(next.location)}</span>` : ''}
-          ${next.distance ? `<span class="hero-meta-item">📏 ${next.distance}km</span>` : ''}
-        </div>
-        ${weatherHtml}
-        ${next.createdBy ? `<div style="margin-top:8px;font-size:11px;opacity:0.7">👑 ${esc(next.createdBy)} 개설</div>` : ''}
-      </div>`;
-  } else {
-    heroSection.innerHTML = '';
-  }
-
-  const allList = document.getElementById('all-runs-list');
-  allList.innerHTML = '';
-  const upcomingRest = upcoming.slice(1);
-  if (upcomingRest.length > 0) {
-    allList.innerHTML += `<div class="section-title">예정된 런</div>`;
-    upcomingRest.forEach(r => allList.appendChild(buildRunCard(r)));
-  }
-  if (past.length > 0) {
-    allList.innerHTML += `<div class="section-title">지난 런</div>`;
-    past.forEach(r => allList.appendChild(buildRunCard(r)));
-  }
-  if (runs.length === 0) {
-    allList.innerHTML = `<div class="empty-state"><div class="empty-icon">🏃‍♀️</div><div class="empty-text">아직 러닝 일정이 없어요<br>+ 버튼으로 추가해보세요!</div></div>`;
-  }
-}
-
 function renderRunsInto(containerId, runsArr, emptyMsg) {
   const el = document.getElementById(containerId);
   el.innerHTML = '';
