@@ -830,9 +830,10 @@ function renderCalendar() {
 // 달력 하단 목록: 예정된 런(가까운 순) → 지난 런(최신 순, 3개씩 더 보기)
 function renderCalRunsList() {
   const today = new Date().toISOString().slice(0,10);
-  const upcoming = runs.filter(r => r.date > today || (r.date === today && !isCompleted(r))).sort((a,b) => a.date.localeCompare(b.date));
+  const sortKey = r => `${r.date}T${r.time || '99:99'}`; // 날짜+시간 순, 시간 없으면 뒤로
+  const upcoming = runs.filter(r => r.date > today || (r.date === today && !isCompleted(r))).sort((a,b) => sortKey(a).localeCompare(sortKey(b)));
   const done = runs.filter(r => r.date === today && isCompleted(r));
-  const past = [...done, ...runs.filter(r => r.date < today)].sort((a,b) => b.date.localeCompare(a.date));
+  const past = [...done, ...runs.filter(r => r.date < today)].sort((a,b) => sortKey(b).localeCompare(sortKey(a)));
 
   const el = document.getElementById('cal-runs-list');
   el.innerHTML = '';
