@@ -959,28 +959,9 @@ async function openDetail(run) {
   infoHtml += '</div></div>';
   body.innerHTML += infoHtml;
 
-  // Weather + Dust section
-  const wx = await fetchWeatherAndDust(run.date, run.time);
-  if (wx) {
-    const di = dustIndex(wx.pm25);
-    const pm10di = dustIndexPM10(wx.pm10);
-    const wc = weatherCondition(wx.weatherCode);
-    const timeLabel = run.time ? ` (${run.time} 기준)` : '';
-    body.innerHTML += `
-      <div class="detail-section">
-        <div class="detail-section-title">날씨 & 대기환경${timeLabel}</div>
-        <div class="weather-grid">
-          <div class="weather-card"><div class="weather-icon">${wc.icon}</div><div class="weather-value" style="font-size:12px">${wc.label}</div><div class="weather-label">날씨</div></div>
-          <div class="weather-card"><div class="weather-icon">🌡</div><div class="weather-value">${wx.temp}°C</div><div class="weather-label">기온</div></div>
-          <div class="weather-card"><div class="weather-icon">🌧</div><div class="weather-value">${wx.rain}%</div><div class="weather-label">강수확률</div></div>
-          <div class="weather-card"><div class="weather-icon">☀️</div><div class="weather-value">${wx.uv}</div><div class="weather-label">UV 지수</div></div>
-        </div>
-        <div class="dust-index" style="margin-top:10px">
-          <div class="dust-index-label">미세먼지 (PM2.5 · PM10: ${wx.pm10}㎍/㎥)</div>
-          <div class="dust-index-badge">${di.icon} ${di.label} — ${di.desc}</div>
-        </div>
-      </div>`;
-  }
+  // Weather placeholder — 날씨는 비동기라, 자리만 먼저 잡아두고 나중에 채운다.
+  // (날씨 로딩이 느려도 아래 참여자/사진/수정 버튼이 즉시 보이도록)
+  body.innerHTML += `<div id="detail-weather-slot"></div>`;
 
   // Participants
   if (run.participants && run.participants.length > 0) {
@@ -1002,10 +983,6 @@ async function openDetail(run) {
       </div>
     </div>`;
 
-  document.getElementById('detail-participant-input').addEventListener('keydown', e => {
-    if (e.key === 'Enter') { e.preventDefault(); addParticipantToRun(run.id); }
-  });
-
   if (run.photos && run.photos.length > 0) {
     const imgs = run.photos.map(url => `<img class="gallery-img" src="${url}" onclick="openLightbox('${url}')">`).join('');
     body.innerHTML += `<div class="detail-section"><div class="detail-section-title">사진</div><div class="photo-gallery">${imgs}</div></div>`;
@@ -1014,6 +991,34 @@ async function openDetail(run) {
   body.innerHTML += `<div style="margin-top:20px; display:flex; gap:10px;">
     <button class="btn-primary" style="flex:1" onclick="closeModal('detail-modal-overlay'); openEditModal('${run.id}')">✏️ 수정하기</button>
   </div>`;
+
+  // 이벤트 리스너는 모든 innerHTML 조작 이후에 붙인다 (innerHTML += 가 기존 노드를 재생성하므로).
+  document.getElementById('detail-participant-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); addParticipantToRun(run.id); }
+  });
+
+  // Weather + Dust — 위에서 잡아둔 슬롯에 나중에 채운다. 실패해도 나머지 UI에는 영향 없음.
+  const wx = await fetchWeatherAndDust(run.date, run.time);
+  const slot = document.getElementById('detail-weather-slot');
+  if (wx && slot) {
+    const di = dustIndex(wx.pm25);
+    const wc = weatherCondition(wx.weatherCode);
+    const timeLabel = run.time ? ` (${run.time} 기준)` : '';
+    slot.innerHTML = `
+      <div class="detail-section">
+        <div class="detail-section-title">날씨 & 대기환경${timeLabel}</div>
+        <div class="weather-grid">
+          <div class="weather-card"><div class="weather-icon">${wc.icon}</div><div class="weather-value" style="font-size:12px">${wc.label}</div><div class="weather-label">날씨</div></div>
+          <div class="weather-card"><div class="weather-icon">🌡</div><div class="weather-value">${wx.temp}°C</div><div class="weather-label">기온</div></div>
+          <div class="weather-card"><div class="weather-icon">🌧</div><div class="weather-value">${wx.rain}%</div><div class="weather-label">강수확률</div></div>
+          <div class="weather-card"><div class="weather-icon">☀️</div><div class="weather-value">${wx.uv}</div><div class="weather-label">UV 지수</div></div>
+        </div>
+        <div class="dust-index" style="margin-top:10px">
+          <div class="dust-index-label">미세먼지 (PM2.5 · PM10: ${wx.pm10}㎍/㎥)</div>
+          <div class="dust-index-badge">${di.icon} ${di.label} — ${di.desc}</div>
+        </div>
+      </div>`;
+  }
 }
 
 // ─── EDIT MODAL ──────────────────────────────────────────────────
