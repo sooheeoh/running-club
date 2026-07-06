@@ -7,6 +7,9 @@
 <title>🏃‍♀️ 한강런 클럽</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://www.gstatic.com">
+<link rel="preconnect" href="https://firestore.googleapis.com">
+<link rel="preconnect" href="https://identitytoolkit.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -713,6 +716,9 @@ window.addEventListener('DOMContentLoaded', () => {
     if (e.key === 'Enter') { e.preventDefault(); confirmNickname(); }
   });
 
+  // 캐시된 런으로 즉시 화면을 그린다 (서버 응답 오면 자동으로 최신 데이터로 교체).
+  renderFromCache();
+
   // 보안 규칙이 인증을 요구하므로, 백그라운드 익명 로그인 후 데이터에 연결한다.
   // 사용자는 로그인 화면을 보지 않는다.
   auth.signInAnonymously()
@@ -727,10 +733,26 @@ function startRunsListener() {
   db.collection('runs').orderBy('date', 'desc').onSnapshot(snap => {
     runs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     renderAll();
+    // 다음 방문 때 서버 응답 전에 즉시 화면을 그릴 수 있도록 캐시해둔다.
+    try { localStorage.setItem('rc_runs_cache', JSON.stringify(runs)); } catch (e) {}
   }, err => {
     showToast('데이터를 불러오는데 실패했어요.');
     console.error(err);
   });
+}
+
+// 재방문: 서버 응답을 기다리지 않고 캐시된 런으로 먼저 화면을 그린다 (응답 오면 자동 갱신).
+function renderFromCache() {
+  try {
+    const cached = localStorage.getItem('rc_runs_cache');
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (Array.isArray(parsed) && parsed.length > 0 && runs.length === 0) {
+        runs = parsed;
+        renderAll();
+      }
+    }
+  } catch (e) {}
 }
 
 // ─── NICKNAME ────────────────────────────────────────────────────
