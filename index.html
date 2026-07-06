@@ -503,8 +503,8 @@
     <div class="modal-handle"></div>
     <div class="modal-title" style="margin-bottom:16px">클럽 애널리틱스</div>
     <div class="analytics-tab-row">
-      <button class="analytics-tab active" id="tab-all" onclick="switchAnalyticsTab('all')">전체</button>
-      <button class="analytics-tab" id="tab-month" onclick="switchAnalyticsTab('month')">이번 달</button>
+      <button class="analytics-tab active" id="tab-month" onclick="switchAnalyticsTab('month')">이번 달</button>
+      <button class="analytics-tab" id="tab-all" onclick="switchAnalyticsTab('all')">전체</button>
     </div>
     <div id="analytics-content"></div>
   </div>
@@ -1521,9 +1521,9 @@ function calcTraining() {
 let analyticsTab = 'all';
 
 function openAnalytics() {
-  analyticsTab = 'all';
-  document.getElementById('tab-all').classList.add('active');
-  document.getElementById('tab-month').classList.remove('active');
+  analyticsTab = 'month';
+  document.getElementById('tab-month').classList.add('active');
+  document.getElementById('tab-all').classList.remove('active');
   renderAnalyticsContent();
   openModal('analytics-modal-overlay');
 }
