@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>한강런 클럽 · 50번의 런</title>
+<style>
+  :root{
+    --ink:#0B1020; --ink2:#121A30; --card:#161F38; --card2:#1B2540; --line:#26314f;
+    --text:#EAF0FF; --muted:#93A0C2; --faint:#5E6B8C;
+    --blue:#4C8DFF; --blue-bright:#6FA8FF; --coral:#FF6B4A; --coral-soft:#FF8A6E;
+    --mint:#3FE0B0; --gold:#FFC85C; --maxw:440px;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  html{color-scheme:dark}
+  body{
+    background:
+      radial-gradient(120% 60% at 50% -10%, rgba(76,141,255,0.22), transparent 60%),
+      radial-gradient(90% 40% at 100% 100%, rgba(255,107,74,0.12), transparent 55%),
+      var(--ink);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Pretendard',system-ui,sans-serif;
+    line-height:1.5;-webkit-font-smoothing:antialiased;padding:0 0 60px;
+  }
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 18px}
+  .num{font-variant-numeric:tabular-nums;letter-spacing:-0.02em}
+
+  .hero{padding:54px 0 30px;text-align:center;position:relative;overflow:hidden}
+  .eyebrow{font-size:12px;font-weight:700;letter-spacing:.28em;color:var(--blue-bright);text-transform:uppercase}
+  .hero h1{font-size:34px;font-weight:900;letter-spacing:-0.03em;margin:12px 0 6px;text-wrap:balance;line-height:1.08}
+  .hero .period{color:var(--muted);font-size:13.5px;font-weight:600}
+  .runline{margin:24px auto 6px;display:block;width:100%;max-width:360px;height:44px}
+  .hero .kicker{font-size:14px;color:var(--muted);margin-top:6px}
+  .hero .kicker b{color:var(--coral-soft);font-weight:800}
+
+  section{margin-top:30px}
+  .label{font-size:11.5px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:var(--faint);margin:0 0 12px 2px}
+
+  .wow{background:linear-gradient(160deg,var(--card2),var(--card));border:1px solid var(--line);border-radius:22px;padding:26px 22px;text-align:center;position:relative;overflow:hidden}
+  .wow::after{content:"";position:absolute;inset:0;background:radial-gradient(90% 70% at 50% 0,rgba(76,141,255,.18),transparent 60%);pointer-events:none}
+  .wow .big{font-size:64px;font-weight:900;line-height:.95;letter-spacing:-0.04em;background:linear-gradient(180deg,#fff,var(--blue-bright));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .wow .unit{font-size:22px;font-weight:800;color:var(--blue-bright);margin-left:2px}
+  .wow .cap{font-size:14px;color:var(--muted);margin-top:10px;font-weight:600}
+  .wow .cap b{color:var(--text);font-weight:800}
+  .route{margin-top:16px;display:flex;align-items:center;gap:8px;justify-content:center;font-size:12.5px;color:var(--faint);font-weight:700}
+  .route .dot{width:8px;height:8px;border-radius:50%;background:var(--coral)}
+  .route .seg{flex:0 0 auto;width:48px;height:2px;background:linear-gradient(90deg,var(--coral),var(--blue));border-radius:2px}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+  .tile{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 15px}
+  .tile .v{font-size:29px;font-weight:900;letter-spacing:-0.03em;line-height:1}
+  .tile .k{font-size:12.5px;color:var(--muted);margin-top:7px;font-weight:600}
+  .tile.accent .v{color:var(--coral-soft)} .tile.blue .v{color:var(--blue-bright)}
+
+  .board{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px 16px}
+  .course{display:flex;flex-direction:column;gap:9px}
+  .crow{display:flex;align-items:center;gap:11px}
+  .cname{font-size:13.5px;font-weight:800;width:78px;flex:0 0 auto}
+  .cbar{flex:1;height:22px;background:var(--ink2);border-radius:7px;overflow:hidden}
+  .cbar > i{display:block;height:100%;background:linear-gradient(90deg,rgba(76,141,255,.55),var(--blue));border-radius:7px}
+  .cval{font-size:12.5px;font-weight:800;color:var(--muted);width:26px;text-align:right}
+
+  .facts{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+  .fact{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:15px}
+  .fact .fe{font-size:22px}
+  .fact .fv{font-size:20px;font-weight:900;margin-top:6px;letter-spacing:-0.02em}
+  .fact .fv small{font-size:13px;color:var(--muted);font-weight:800}
+  .fact .fk{font-size:12px;color:var(--muted);margin-top:4px;font-weight:600;line-height:1.35}
+  .fact.wide{grid-column:1 / -1;display:flex;align-items:center;gap:14px}
+  .fact.wide .fe{font-size:30px}
+  .fact.wide .txt .fv{margin-top:0}
+
+  /* MY CARD */
+  #search{width:100%;background:var(--card);border:1px solid var(--line);border-radius:13px;padding:12px 15px;color:var(--text);font-size:15px;font-weight:600;outline:none}
+  #search::placeholder{color:var(--faint)}
+  #search:focus{border-color:var(--blue)}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:13px}
+  .chip{background:var(--card);border:1px solid var(--line);color:var(--text);font-size:14px;font-weight:800;padding:8px 14px;border-radius:20px;cursor:pointer;transition:transform .12s,border-color .12s,background .12s}
+  .chip:hover{border-color:var(--blue);transform:translateY(-1px)}
+  .chip:focus-visible{outline:2px solid var(--blue-bright);outline-offset:2px}
+  .chip.on{background:var(--blue);border-color:var(--blue);color:#fff}
+  .chip.hide{display:none}
+  #card{margin-top:16px}
+  .placeholder{text-align:center;color:var(--faint);font-size:14px;line-height:1.6;padding:26px 0}
+  .placeholder .big{font-size:36px;margin-bottom:6px}
+  .idcard{background:linear-gradient(165deg,var(--card2),var(--card));border:1px solid var(--line);border-radius:24px;padding:24px 22px 22px;position:relative;overflow:hidden}
+  .idcard::after{content:"";position:absolute;inset:0;background:radial-gradient(90% 60% at 50% 0,rgba(76,141,255,.16),transparent 60%);pointer-events:none}
+  .bdg{display:inline-flex;align-items:center;gap:7px;background:rgba(255,200,92,.14);border:1px solid rgba(255,200,92,.34);color:var(--gold);font-size:12.5px;font-weight:900;padding:6px 13px;border-radius:20px}
+  .bdg .be{font-size:15px}
+  .name{font-size:38px;font-weight:900;letter-spacing:-0.03em;margin:13px 0 2px;line-height:1}
+  .name .sfx{font-size:19px;color:var(--muted);font-weight:800}
+  .subtitle{font-size:14px;color:var(--muted);font-weight:600}
+  .subtitle b{color:var(--coral-soft);font-weight:800}
+  .heronums{display:flex;gap:10px;margin-top:18px}
+  .hn{flex:1;background:rgba(11,16,32,.5);border:1px solid var(--line);border-radius:16px;padding:14px;text-align:center}
+  .hn .v{font-size:31px;font-weight:900;letter-spacing:-0.03em;line-height:1}
+  .hn.a .v{color:var(--blue-bright)} .hn.b .v{color:var(--coral-soft)}
+  .hn .v small{font-size:15px;font-weight:800;color:var(--muted)}
+  .hn .k{font-size:12px;color:var(--muted);margin-top:7px;font-weight:700}
+  .rows{margin-top:14px;display:flex;flex-direction:column}
+  .r{display:flex;align-items:center;gap:12px;padding:12px 2px;border-top:1px solid var(--line)}
+  .r:first-child{border-top:none}
+  .r .ic{font-size:19px;width:24px;text-align:center;flex:0 0 auto}
+  .r .rk{font-size:12px;color:var(--muted);font-weight:700}
+  .r .rv{font-size:15px;font-weight:800;margin-top:1px;line-height:1.3}
+  .r .rv b{color:var(--blue-bright)}
+  .r .rv.small{font-size:13.5px;font-weight:700}
+  .r .txt{flex:1;min-width:0}
+  .timebar{margin-top:16px;background:rgba(11,16,32,.5);border:1px solid var(--line);border-radius:16px;padding:14px 16px}
+  .timebar .tt{font-size:12px;color:var(--muted);font-weight:700;margin-bottom:9px;display:flex;justify-content:space-between;gap:8px}
+  .track{height:9px;border-radius:5px;background:var(--ink2);overflow:hidden;display:flex}
+  .track .m{background:linear-gradient(90deg,var(--gold),var(--coral))}
+  .track .e{background:linear-gradient(90deg,var(--blue),var(--blue-bright))}
+  .tlabels{display:flex;justify-content:space-between;font-size:11.5px;font-weight:800;margin-top:7px}
+  .tlabels .lm{color:var(--gold)} .tlabels .le{color:var(--blue-bright)}
+  .closing{margin-top:16px;text-align:center;font-size:14px;font-weight:700;color:var(--text);line-height:1.5}
+
+  /* NOTICE */
+  .notice{margin-top:30px;background:linear-gradient(160deg,var(--card2),var(--card));border:1px solid rgba(76,141,255,.35);border-radius:22px;padding:24px 22px;text-align:center;position:relative;overflow:hidden}
+  .notice::after{content:"";position:absolute;inset:0;background:radial-gradient(90% 70% at 50% 0,rgba(76,141,255,.14),transparent 60%);pointer-events:none}
+  .notice .tag{font-size:12px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:var(--blue-bright)}
+  .notice h2{font-size:21px;font-weight:900;margin:9px 0 8px;letter-spacing:-0.02em;color:#fff;text-wrap:balance}
+  .notice p{font-size:14px;color:var(--muted);font-weight:600;line-height:1.6}
+  .notice p b{color:var(--coral-soft);font-weight:800}
+  .once{display:inline-block;margin-top:14px;background:rgba(255,107,74,.14);border:1px solid rgba(255,107,74,.4);color:var(--coral-soft);font-size:13px;font-weight:800;padding:9px 16px;border-radius:20px}
+
+  .foot{text-align:center;color:var(--faint);font-size:11.5px;margin-top:26px;line-height:1.7}
+  .foot b{color:var(--muted)}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  .fade{animation:fade .45s ease both}
+  @keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="hero">
+    <div class="eyebrow">🏃‍♀️ 한강런 클럽</div>
+    <h1>함께 달린 50번의 런</h1>
+    <div class="period num">2026.04.19 — 07.09</div>
+    <svg class="runline" viewBox="0 0 360 44" fill="none" aria-hidden="true">
+      <path id="rp" d="M2 34 C 40 34, 52 12, 84 12 S 128 30, 158 30 210 8, 250 8 300 30, 330 30 L358 30" stroke="url(#g)" stroke-width="3" stroke-linecap="round" stroke-dasharray="2 7"/>
+      <circle r="5" fill="#FF6B4A"><animateMotion dur="3.2s" repeatCount="indefinite" keyPoints="0;1" keyTimes="0;1"><mpath href="#rp"/></animateMotion></circle>
+      <defs><linearGradient id="g" x1="0" y1="0" x2="360" y2="0" gradientUnits="userSpaceOnUse"><stop stop-color="#FF6B4A"/><stop offset="1" stop-color="#4C8DFF"/></linearGradient></defs>
+    </svg>
+    <div class="kicker"><b>35명</b>의 러너가 함께 만든 기록</div>
+  </header>
+
+  <section>
+    <div class="label">다 함께 달린 거리</div>
+    <div class="wow">
+      <div><span class="big num" data-count="1331">0</span><span class="unit">km</span></div>
+      <div class="cap">멤버들이 함께 밟은 총 거리 · <b>서울 ↔ 부산 왕복 2번</b>보다 멀리</div>
+      <div class="route"><span class="dot"></span><span>서울</span><span class="seg"></span><span>부산</span><span class="seg"></span><span>서울</span><span class="dot" style="background:var(--blue)"></span></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="label">숫자로 보는 우리</div>
+    <div class="grid">
+      <div class="tile blue"><div class="v num" data-count="50">0</div><div class="k">번의 러닝 모임</div></div>
+      <div class="tile"><div class="v num" data-count="340">0</div><div class="k">코스 거리 총합 (km)</div></div>
+      <div class="tile accent"><div class="v num" data-count="201">0</div><div class="k">누적 참여 (연인원)</div></div>
+      <div class="tile"><div class="v num" data-count="35">0</div><div class="k">함께한 러너</div></div>
+      <div class="tile"><div class="v num" data-count="68" data-div="10">0</div><div class="k">평균 러닝 거리 (km)</div></div>
+      <div class="tile"><div class="v num" data-count="98">0</div><div class="k">남긴 러닝 사진</div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="label">가장 사랑한 코스</div>
+    <div class="board">
+      <div class="course">
+        <div class="crow"><span class="cname">중랑천</span><span class="cbar"><i style="width:100%"></i></span><span class="cval">12</span></div>
+        <div class="crow"><span class="cname">반포·잠원</span><span class="cbar"><i style="width:50%"></i></span><span class="cval">6</span></div>
+        <div class="crow"><span class="cname">여의도</span><span class="cbar"><i style="width:50%"></i></span><span class="cval">6</span></div>
+        <div class="crow"><span class="cname">동작</span><span class="cbar"><i style="width:42%"></i></span><span class="cval">5</span></div>
+        <div class="crow"><span class="cname">자양·뚝섬</span><span class="cbar"><i style="width:33%"></i></span><span class="cval">4</span></div>
+        <div class="crow"><span class="cname">남산</span><span class="cbar"><i style="width:25%"></i></span><span class="cval">3</span></div>
+        <div class="crow"><span class="cname">경복궁</span><span class="cbar"><i style="width:25%"></i></span><span class="cval">3</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="label">재밌는 팩트</div>
+    <div class="facts">
+      <div class="fact wide">
+        <div class="fe">🌙</div>
+        <div class="txt">
+          <div class="fv">저녁런 클럽 · <span style="color:var(--coral-soft)">82%</span></div>
+          <div class="fk">50번 중 41번이 해 진 뒤 출발. 우리는 밤에 더 빛나요.</div>
+        </div>
+      </div>
+      <div class="fact"><div class="fe">🍠</div><div class="fv num">6<small>번</small></div><div class="fk">'고구마런' 개최 — 크루 공식 밈</div></div>
+      <div class="fact"><div class="fe">🐢</div><div class="fv num">5<small>번</small></div><div class="fk">LSD 롱런으로 지구력 쌓기</div></div>
+      <div class="fact"><div class="fe">👥</div><div class="fv num">10<small>명</small></div><div class="fk">최다 인원 — 동작역 러닝 (6/17)</div></div>
+      <div class="fact"><div class="fe">📏</div><div class="fv num">15<small>km</small></div><div class="fk">최장 거리 — 일요 LSD</div></div>
+      <div class="fact wide">
+        <div class="fe">⏰</div>
+        <div class="txt">
+          <div class="fv num">06:30 <small style="color:var(--faint)">—</small> 21:00</div>
+          <div class="fk">가장 이른 새벽런부터 가장 늦은 밤런까지, 하루를 넓게 써요.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="label">나의 러닝 카드 · 이름을 골라보세요</div>
+    <div class="chips" id="chips"></div>
+    <div id="card">
+      <div class="placeholder" id="ph"><div class="big">👆</div>이름을 누르면 나만의 러닝 통계가 펼쳐져요</div>
+    </div>
+  </section>
+
+  <section class="notice">
+    <div class="tag">📢 7월부터 · 함께 오래가기 위해</div>
+    <h2>한 달에 한 번은 함께 달려요</h2>
+    <p>이제부터는 <b>한 달에 한 번 이상 참석</b>하면<br>다음 달에도 크루 자격이 유지돼요.<br>부담 갖지 말고, 딱 한 번이면 충분해요 🙂</p>
+    <div class="once">이번 달, 한 번은 꼭 만나요 🏃‍♀️</div>
+  </section>
+
+  <div class="foot">
+    한강런 클럽 · 2026.04.19–07.09 기준 집계<br>
+    <b>함께라서 더 멀리, 더 오래.</b>
+  </div>
+
+</div>
+
+<script>
+const D = {"딩딩":{"name":"딩딩","runs":23,"km":129,"created":17,"first":"2026-04-19","firstTitle":"한강공원 러닝 (이촌-잠수교-반포) (아카이브)","longest":{"km":11.5,"title":"동작역 러닝🏃‍♀️ (700-730)"},"favArea":"반포·잠원","favAreaCount":5,"mate":"호호","mateCount":10,"people":25,"morning":5,"evening":18},"호호":{"name":"호호","runs":13,"km":80,"created":4,"first":"2026-05-13","firstTitle":"수요 정기런 (아카이브)","longest":{"km":11.5,"title":"동작역 러닝🏃‍♀️ (700-730)"},"favArea":"반포·잠원","favAreaCount":5,"mate":"딩딩","mateCount":10,"people":20,"morning":4,"evening":9},"콜라":{"name":"콜라","runs":20,"km":115.5,"created":12,"first":"2026-04-19","firstTitle":"한강공원 러닝 (이촌-잠수교-반포) (아카이브)","longest":{"km":10,"title":"고구마런"},"favArea":"자양·뚝섬","favAreaCount":3,"mate":"딩딩","mateCount":8,"people":24,"morning":3,"evening":17},"검둥":{"name":"검둥","runs":3,"km":15,"created":1,"first":"2026-06-15","firstTitle":"중랑천 러닝(군자교)","longest":{"km":5,"title":"중랑천 러닝(군자교)"},"favArea":"중랑천","favAreaCount":3,"mate":"노바","mateCount":2,"people":3,"morning":1,"evening":2},"토욜":{"name":"토욜","runs":9,"km":75.5,"created":1,"first":"2026-06-10","firstTitle":"중랑천 런(군자교 출발)","longest":{"km":15,"title":"🏃🏻‍♀️ 일요 LSD 🏃🏻‍♀️(제기동역-중랑교)"},"favArea":"중랑천","favAreaCount":7,"mate":"노바","mateCount":4,"people":10,"morning":3,"evening":6},"마루":{"name":"마루","runs":19,"km":118.3,"created":3,"first":"2026-05-13","firstTitle":"수요 정기런 (아카이브)","longest":{"km":13,"title":"LSD : 월계교<->도봉산역 왕복런 13k"},"favArea":"중랑천","favAreaCount":6,"mate":"딩딩","mateCount":10,"people":24,"morning":2,"evening":17},"노바":{"name":"노바","runs":6,"km":51.5,"created":3,"first":"2026-06-10","firstTitle":"중랑천 런(군자교 출발)","longest":{"km":15,"title":"🏃🏻‍♀️ 일요 LSD 🏃🏻‍♀️(제기동역-중랑교)"},"favArea":"중랑천","favAreaCount":5,"mate":"토욜","mateCount":4,"people":6,"morning":2,"evening":4},"윤":{"name":"윤","runs":6,"km":38.5,"created":0,"first":"2026-05-16","firstTitle":"어린이대공원 붕어빵런","longest":{"km":11.5,"title":"동작역 러닝🏃‍♀️ (700-730)"},"favArea":"반포·잠원","favAreaCount":2,"mate":"제비","mateCount":5,"people":16,"morning":1,"evening":5},"바우":{"name":"바우","runs":2,"km":9,"created":0,"first":"2026-04-19","firstTitle":"한강공원 러닝 (이촌-잠수교-반포) (아카이브)","longest":{"km":5,"title":"한강공원 러닝 (이촌-잠수교-반포) (아카이브)"},"favArea":"올림픽공원","favAreaCount":1,"mate":"콜라","mateCount":2,"people":5,"morning":0,"evening":2},"해햄":{"name":"해햄","runs":12,"km":69,"created":0,"first":"2026-04-22","firstTitle":"수요 정기런 (아카이브)","longest":{"km":10,"title":"고구마런"},"favArea":"반포·잠원","favAreaCount":3,"mate":"딩딩","mateCount":9,"people":20,"morning":1,"evening":11},"방랑":{"name":"방랑","runs":12,"km":85,"created":2,"first":"2026-04-22","firstTitle":"수요 정기런 (아카이브)","longest":{"km":15,"title":"LSD 15K 런"},"favArea":"반포·잠원","favAreaCount":4,"mate":"콜라","mateCount":6,"people":21,"morning":2,"evening":10},"보":{"name":"보","runs":5,"km":29,"created":1,"first":"2026-06-05","firstTitle":"동작대교런","longest":{"km":8,"title":"고구마 런"},"favArea":"여의도","favAreaCount":2,"mate":"까치","mateCount":3,"people":13,"morning":0,"evening":5},"까치":{"name":"까치","runs":5,"km":32,"created":0,"first":"2026-06-12","firstTitle":"고구마 런","longest":{"km":8,"title":"고구마 런"},"favArea":"여의도","favAreaCount":3,"mate":"보","mateCount":3,"people":10,"morning":0,"evening":5},"런린":{"name":"런린","runs":9,"km":76.3,"created":3,"first":"2026-05-09","firstTitle":"남산런 (아카이브)","longest":{"km":15,"title":"LSD 15K 런"},"favArea":"중랑천","favAreaCount":4,"mate":"마루","mateCount":5,"people":17,"morning":0,"evening":9},"딸기":{"name":"딸기","runs":1,"km":8,"created":0,"first":"2026-06-14","firstTitle":"자양역 출발 한강런","longest":{"km":8,"title":"자양역 출발 한강런"},"favArea":"자양·뚝섬","favAreaCount":1,"mate":"무희송","mateCount":1,"people":5,"morning":0,"evening":1},"무희송":{"name":"무희송","runs":1,"km":8,"created":0,"first":"2026-06-14","firstTitle":"자양역 출발 한강런","longest":{"km":8,"title":"자양역 출발 한강런"},"favArea":"자양·뚝섬","favAreaCount":1,"mate":"딸기","mateCount":1,"people":5,"morning":0,"evening":1},"게스트":{"name":"게스트","runs":1,"km":8,"created":0,"first":"2026-06-14","firstTitle":"자양역 출발 한강런","longest":{"km":8,"title":"자양역 출발 한강런"},"favArea":"자양·뚝섬","favAreaCount":1,"mate":"딸기","mateCount":1,"people":5,"morning":0,"evening":1},"여름":{"name":"여름","runs":1,"km":6.5,"created":0,"first":"2026-06-23","firstTitle":"청담나들목 한강런","longest":{"km":6.5,"title":"청담나들목 한강런"},"favArea":"청담","favAreaCount":1,"mate":"한강","mateCount":1,"people":3,"morning":0,"evening":1},"한강":{"name":"한강","runs":1,"km":6.5,"created":0,"first":"2026-06-23","firstTitle":"청담나들목 한강런","longest":{"km":6.5,"title":"청담나들목 한강런"},"favArea":"청담","favAreaCount":1,"mate":"여름","mateCount":1,"people":3,"morning":0,"evening":1},"제이":{"name":"제이","runs":12,"km":82.5,"created":0,"first":"2026-05-21","firstTitle":"반포-잠원한강 왕복 5km","longest":{"km":13,"title":"LSD : 월계교<->도봉산역 왕복런 13k"},"favArea":"중랑천","favAreaCount":4,"mate":"딩딩","mateCount":7,"people":19,"morning":3,"evening":9},"양양":{"name":"양양","runs":2,"km":13,"created":0,"first":"2026-06-27","firstTitle":"연대운동장 인터벌런","longest":{"km":8,"title":"고구마런"},"favArea":"연대 트랙","favAreaCount":1,"mate":"콜라","mateCount":2,"people":10,"morning":0,"evening":2},"키위":{"name":"키위","runs":1,"km":5,"created":0,"first":"2026-06-27","firstTitle":"연대운동장 인터벌런","longest":{"km":5,"title":"연대운동장 인터벌런"},"favArea":"연대 트랙","favAreaCount":1,"mate":"양양","mateCount":1,"people":4,"morning":0,"evening":1},"제비":{"name":"제비","runs":9,"km":61.5,"created":0,"first":"2026-05-16","firstTitle":"어린이대공원 붕어빵런","longest":{"km":11.5,"title":"동작역 러닝🏃‍♀️ (700-730)"},"favArea":"여의도","favAreaCount":4,"mate":"윤","mateCount":5,"people":16,"morning":0,"evening":9},"리다":{"name":"리다","runs":1,"km":5,"created":0,"first":"2026-05-21","firstTitle":"반포-잠원한강 왕복 5km","longest":{"km":5,"title":"반포-잠원한강 왕복 5km"},"favArea":"반포·잠원","favAreaCount":1,"mate":"방랑","mateCount":1,"people":5,"morning":0,"evening":1},"가을":{"name":"가을","runs":1,"km":5,"created":0,"first":"2026-05-13","firstTitle":"수요 정기런 (아카이브)","longest":{"km":5,"title":"수요 정기런 (아카이브)"},"favArea":"반포·잠원","favAreaCount":1,"mate":"숭","mateCount":1,"people":7,"morning":0,"evening":1},"제인":{"name":"제인","runs":2,"km":9,"created":0,"first":"2026-05-09","firstTitle":"남산런 (아카이브)","longest":{"km":5,"title":"수요 정기런 (아카이브)"},"favArea":"반포·잠원","favAreaCount":1,"mate":"방랑","mateCount":2,"people":11,"morning":0,"evening":2},"숭":{"name":"숭","runs":3,"km":22.5,"created":0,"first":"2026-05-13","firstTitle":"수요 정기런 (아카이브)","longest":{"km":11.5,"title":"동작역 러닝🏃‍♀️ (700-730)"},"favArea":"동작","favAreaCount":2,"mate":"틴틴","mateCount":3,"people":14,"morning":0,"evening":3},"틴틴":{"name":"틴틴","runs":9,"km":72,"created":0,"first":"2026-05-13","firstTitle":"수요 정기런 (아카이브)","longest":{"km":15,"title":"LSD 15K 런"},"favArea":"동작","favAreaCount":4,"mate":"콜라","mateCount":6,"people":17,"morning":1,"evening":8},"치즈":{"name":"치즈","runs":6,"km":48.5,"created":2,"first":"2026-06-09","firstTitle":"고구마런","longest":{"km":11.5,"title":"동작역 러닝🏃‍♀️ (700-730)"},"favArea":"여의도","favAreaCount":4,"mate":"제비","mateCount":5,"people":15,"morning":0,"evening":6},"수현":{"name":"수현","runs":1,"km":8,"created":0,"first":"2026-06-03","firstTitle":"경복궁 미니댕댕런","longest":{"km":8,"title":"경복궁 미니댕댕런"},"favArea":"경복궁","favAreaCount":1,"mate":"해햄","mateCount":1,"people":3,"morning":1,"evening":0},"소나기":{"name":"소나기","runs":1,"km":7.5,"created":0,"first":"2026-07-05","firstTitle":"🌿아름다운 자양런","longest":{"km":7.5,"title":"🌿아름다운 자양런"},"favArea":"자양·뚝섬","favAreaCount":1,"mate":"런린","mateCount":1,"people":3,"morning":0,"evening":1},"이언":{"name":"이언","runs":1,"km":10,"created":0,"first":"2026-07-01","firstTitle":"탄천3공영주차장-동작역","longest":{"km":10,"title":"탄천3공영주차장-동작역"},"favArea":"탄천","favAreaCount":1,"mate":"호호","mateCount":1,"people":1,"morning":0,"evening":1},"자무시":{"name":"자무시","runs":1,"km":11.5,"created":0,"first":"2026-06-17","firstTitle":"동작역 러닝🏃‍♀️ (700-730)","longest":{"km":11.5,"title":"동작역 러닝🏃‍♀️ (700-730)"},"favArea":"동작","favAreaCount":1,"mate":"숭","mateCount":1,"people":9,"morning":0,"evening":1},"곰곰":{"name":"곰곰","runs":1,"km":5,"created":0,"first":"2026-04-19","firstTitle":"한강공원 러닝 (이촌-잠수교-반포) (아카이브)","longest":{"km":5,"title":"한강공원 러닝 (이촌-잠수교-반포) (아카이브)"},"favArea":"이촌","favAreaCount":1,"mate":"바우","mateCount":1,"people":3,"morning":0,"evening":1},"키키":{"name":"키키","runs":1,"km":4,"created":0,"first":"2026-05-09","firstTitle":"남산런 (아카이브)","longest":{"km":4,"title":"남산런 (아카이브)"},"favArea":"남산","favAreaCount":1,"mate":"런린","mateCount":1,"people":6,"morning":0,"evening":1}};
+
+// count-up
+const reduce = matchMedia('(prefers-reduced-motion:reduce)').matches;
+const fmt = n=>n.toLocaleString('en-US');
+function runCount(el){
+  const target=+el.dataset.count, div=+(el.dataset.div||1);
+  if(reduce){el.textContent=div>1?(target/div).toFixed(1):fmt(target);return;}
+  const dur=1100,t0=performance.now();
+  function tick(t){const p=Math.min(1,(t-t0)/dur),e=1-Math.pow(1-p,3),v=target*e;
+    el.textContent=div>1?(v/div).toFixed(1):fmt(Math.round(v));if(p<1)requestAnimationFrame(tick);}
+  requestAnimationFrame(tick);
+}
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){runCount(e.target);io.unobserve(e.target);}}),{threshold:.5});
+document.querySelectorAll('[data-count]').forEach(el=>io.observe(el));
+
+// my card
+const GONE=new Set(['게스트','곰곰','리다','가을','키키','제인']);
+const names=Object.keys(D).filter(n=>!GONE.has(n)).sort((a,b)=>a.localeCompare(b,'ko'));
+const chipsEl=document.getElementById('chips'), cardEl=document.getElementById('card');
+names.forEach(n=>{const b=document.createElement('button');b.className='chip';b.textContent=n;b.dataset.name=n;b.onclick=()=>select(n);chipsEl.appendChild(b);});
+
+function badge(m){
+  if(m.created>=10) return {e:'📣',t:'런 설계자',d:'모두를 불러 모으는'};
+  if(m.km>=100)     return {e:'🛣️',t:'롱런 머신',d:'가장 멀리 달려온'};
+  if(m.runs>=15)    return {e:'🔥',t:'개근 러너',d:'거의 매번 함께한'};
+  if(m.people>=18)  return {e:'🤝',t:'인싸 러너',d:'수많은 러너와 뛴'};
+  if(m.longest.km>=15) return {e:'🐢',t:'LSD 정복자',d:'롱런의 맛을 아는'};
+  if(m.runs>=8)     return {e:'💪',t:'꾸준 러너',d:'꾸준함이 무기인'};
+  if(m.created>=1)  return {e:'✨',t:'런 개척자',d:'직접 런을 연'};
+  if(m.runs>=3)     return {e:'🌊',t:'라이징 러너',d:'점점 물오르는'};
+  return {e:'🌱',t:'새싹 러너',d:'첫 발자국을 뗀'};
+}
+const fdate=s=>{const [,mo,d]=s.split('-');return `${+mo}월 ${+d}일`;};
+
+function select(n){
+  const m=D[n];
+  chipsEl.querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',c.dataset.name===n));
+  const bd=badge(m), tot=m.morning+m.evening, mp=tot?Math.round(m.morning/tot*100):0, ep=100-mp;
+  const createdRow=m.created>0?`<div class="r"><div class="ic">📣</div><div class="txt"><div class="rk">직접 연 런</div><div class="rv"><b>${m.created}개</b>의 런을 만들었어요</div></div></div>`:'';
+  const timeMood=m.morning>=3?'🌅 아침을 여는 보기 드문 러너':(m.morning>m.evening?'🌅 아침형 러너':'🌙 저녁형 러너');
+  cardEl.innerHTML=`
+    <div class="idcard fade">
+      <span class="bdg"><span class="be">${bd.e}</span>${bd.t}</span>
+      <div class="name">${n}<span class="sfx">님</span></div>
+      <div class="subtitle">${bd.d} · <b>한강런 클럽</b>의 러너</div>
+      <div class="heronums">
+        <div class="hn a"><div class="v num">${m.runs}<small>런</small></div><div class="k">함께한 러닝</div></div>
+        <div class="hn b"><div class="v num">${m.km}<small>km</small></div><div class="k">함께 달린 거리</div></div>
+      </div>
+      <div class="rows">
+        <div class="r"><div class="ic">🏁</div><div class="txt"><div class="rk">첫 발자국</div><div class="rv small">${fdate(m.first)} · ${m.firstTitle}</div></div></div>
+        <div class="r"><div class="ic">📍</div><div class="txt"><div class="rk">최애 코스</div><div class="rv"><b>${m.favArea}</b> · ${m.favAreaCount}번</div></div></div>
+        <div class="r"><div class="ic">📏</div><div class="txt"><div class="rk">최장 거리</div><div class="rv small"><b>${m.longest.km}km</b> · ${m.longest.title}</div></div></div>
+        <div class="r"><div class="ic">👥</div><div class="txt"><div class="rk">함께 뛴 러너</div><div class="rv">총 <b>${m.people}명</b>과 발을 맞췄어요</div></div></div>
+        <div class="r"><div class="ic">🤝</div><div class="txt"><div class="rk">러닝 메이트</div><div class="rv"><b>${m.mate}</b> 님과 <b>${m.mateCount}번</b> 함께 뛰었어요</div></div></div>
+        ${createdRow}
+      </div>
+      <div class="timebar">
+        <div class="tt"><span>${timeMood}</span><span>${tot}런 기준</span></div>
+        <div class="track"><div class="m" style="width:${mp}%"></div><div class="e" style="width:${ep}%"></div></div>
+        <div class="tlabels"><span class="lm">아침 ${m.morning}</span><span class="le">저녁 ${m.evening}</span></div>
+      </div>
+      <div class="closing">${bd.e} ${n}님, 지금까지 정말 멋졌어요.<br>이번 달에도 한강에서 만나요!</div>
+    </div>`;
+}
+</script>
+
+</body>
+</html>
