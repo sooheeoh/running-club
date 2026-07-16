@@ -410,6 +410,14 @@
 <!-- FAB -->
 <button class="fab" onclick="openAddModal()" title="새 런 추가">＋</button>
 
+<!-- REPORT OVERLAY (제거하려면 이 블록 삭제) -->
+<div id="report-overlay" onclick="if(event.target.id==='report-overlay')closeReport()" style="position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.5);display:none;">
+  <div style="position:absolute;inset:0;max-width:480px;margin:0 auto;background:#0B1020;">
+    <button onclick="closeReport()" aria-label="닫기" style="position:absolute;top:12px;right:14px;z-index:2;width:34px;height:34px;border-radius:50%;border:none;background:rgba(255,255,255,.16);color:#fff;font-size:16px;cursor:pointer;">✕</button>
+    <iframe id="report-frame" title="러닝 리포트" style="width:100%;height:100%;border:none;"></iframe>
+  </div>
+</div>
+
 <!-- NICKNAME MODAL -->
 <div class="modal-overlay" id="nickname-modal-overlay" onclick="handleOverlayClick(event, 'nickname-modal-overlay')">
   <div class="modal" id="nickname-modal">
@@ -1612,6 +1620,11 @@ function renderAnalyticsContent() {
         <div class="stat-label">이번 달 완료 런</div>
       </div>
     </div>
+    <div onclick="openReport()" style="margin:14px 0 4px;background:#FFF4EF;border:1px solid #FFD7C7;border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:9px;cursor:pointer;font-weight:700;">
+      <span style="font-size:16px;">🎉</span>
+      <span style="flex:1;font-size:13px;line-height:1.35;letter-spacing:-0.01em;color:#1A1A1A;"><b style="color:#FF6B4A;font-weight:800;">50번 런 달성 기념</b> · 러닝 리포트</span>
+      <span style="font-size:13px;color:#FF6B4A;opacity:.8;">›</span>
+    </div>
     <div class="detail-section-title">${analyticsTab === 'all' ? '전체 기간' : '이번 달'} 멤버 기록</div>
     <div class="leaderboard">${lbHtml}</div>`;
 }
@@ -1636,6 +1649,18 @@ function openLightbox(url) {
 }
 function closeLightbox() {
   document.getElementById('lightbox').classList.remove('open');
+}
+
+// ─── REPORT (러닝 리포트) ─────────────────────────────────────────
+function openReport() {
+  const f = document.getElementById('report-frame');
+  if (!f.getAttribute('src')) f.setAttribute('src', 'report.html');
+  document.getElementById('report-overlay').style.display = 'block';
+  document.body.style.overflow = 'hidden';
+}
+function closeReport() {
+  document.getElementById('report-overlay').style.display = 'none';
+  document.body.style.overflow = '';
 }
 
 // ─── HELPERS ─────────────────────────────────────────────────────
