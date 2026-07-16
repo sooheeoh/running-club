@@ -394,13 +394,6 @@
   <div class="neon-track" id="neon-track"></div>
 </div>
 
-<!-- REPORT BANNER (제거하려면 이 블록 삭제) -->
-<div id="report-banner" onclick="openReport()" style="margin:12px 16px 0;background:#FFF4EF;border:1px solid #FFD7C7;border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:9px;cursor:pointer;font-weight:700;">
-  <span style="font-size:16px;">🎉</span>
-  <span style="flex:1;font-size:13px;line-height:1.35;letter-spacing:-0.01em;color:#1A1A1A;"><b style="color:#FF6B4A;font-weight:800;">50번 런 달성 기념</b> · 러닝 리포트</span>
-  <span style="font-size:13px;color:#FF6B4A;opacity:.8;">›</span>
-</div>
-
 <!-- MAIN CONTENT -->
 <div id="view-calendar">
   <div class="calendar-wrap">
@@ -1626,6 +1619,11 @@ function renderAnalyticsContent() {
         <div class="stat-num">${completedMonth.length}</div>
         <div class="stat-label">이번 달 완료 런</div>
       </div>
+    </div>
+    <div onclick="openReport()" style="margin:14px 0 4px;background:#FFF4EF;border:1px solid #FFD7C7;border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:9px;cursor:pointer;font-weight:700;">
+      <span style="font-size:16px;">🎉</span>
+      <span style="flex:1;font-size:13px;line-height:1.35;letter-spacing:-0.01em;color:#1A1A1A;"><b style="color:#FF6B4A;font-weight:800;">50번 런 달성 기념</b> · 러닝 리포트</span>
+      <span style="font-size:13px;color:#FF6B4A;opacity:.8;">›</span>
     </div>
     <div class="detail-section-title">${analyticsTab === 'all' ? '전체 기간' : '이번 달'} 멤버 기록</div>
     <div class="leaderboard">${lbHtml}</div>`;
