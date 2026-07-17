@@ -78,7 +78,9 @@
   .run-dot.upcoming { background: var(--primary); }
   .run-dot.past { background: #D1D5DB; }
   .run-dot.completed { background: #10B981; }
+  .run-dot.special { background: #8B5CF6; }
   .badge-completed { background: #D1FAE5; color: #065F46; }
+  .badge-special { background: #EDE9FE; color: #6D28D9; }
 
   /* LIST VIEW */
   .list-wrap { padding: 0 16px; }
@@ -442,7 +444,14 @@
     </div>
 
     <div class="modal-section">
-      <label class="form-label">런 제목 / 별칭 *</label>
+      <label class="form-label">종류</label>
+      <div class="analytics-tab-row" style="margin-bottom:0;">
+        <button type="button" class="analytics-tab active" id="type-btn-run" onclick="setFormType('run')">러닝</button>
+        <button type="button" class="analytics-tab" id="type-btn-special" onclick="setFormType('special')">그외</button>
+      </div>
+    </div>
+    <div class="modal-section">
+      <label class="form-label" id="f-title-label">런 제목 / 별칭 *</label>
       <input type="text" class="form-input" id="f-title" placeholder="예: 어린이대공원 붕어빵런" maxlength="100">
     </div>
     <div class="modal-section form-row">
@@ -459,11 +468,11 @@
       <label class="form-label">장소</label>
       <input type="text" class="form-input" id="f-location" placeholder="예: 어린이대공원 정문 앞">
     </div>
-    <div class="modal-section">
-      <label class="form-label">예상 거리 (km)</label>
+    <div class="modal-section" id="section-distance">
+      <label class="form-label" id="f-distance-label">예상 거리 (km)</label>
       <input type="number" class="form-input" id="f-distance" placeholder="5" min="0" step="0.1">
     </div>
-    <div class="modal-section">
+    <div class="modal-section" id="section-courseurl">
       <label class="form-label">코스 URL (선택)</label>
       <input type="url" class="form-input" id="f-course-url" placeholder="https://...">
     </div>
@@ -484,11 +493,10 @@
       <div class="participant-chips" id="f-participant-chips" style="margin-top:8px; display:flex; flex-wrap:wrap; gap:4px;"></div>
     </div>
     <div class="modal-section" id="photo-section">
-      <label class="form-label">러닝 후 사진 (최대 2장)</label>
+      <label class="form-label">활동 사진 (최대 2장)</label>
       <div class="photo-upload-area" onclick="document.getElementById('f-photos').click()">
         <input type="file" id="f-photos" accept="image/*" multiple onchange="handlePhotoSelect(event)">
         <div>📷 사진을 탭해서 선택하세요</div>
-        <div style="font-size:12px; color: var(--text-secondary); margin-top:4px;">WebP로 자동 변환됩니다</div>
       </div>
       <div class="photo-preview-row" id="photo-preview-row"></div>
     </div>
@@ -702,6 +710,26 @@ let calYear, calMonth;
 let formParticipants = [];
 let formPhotos = [];
 let editingRunId = null;
+let formType = 'run'; // 'run' | 'special' — 러닝 vs 특별 원데이 세션
+
+// 추가/수정 폼의 종류 토글 ('그외'는 거리·코스URL 항목을 숨긴다)
+function setFormType(t) {
+  formType = t;
+  const other = t === 'special';
+  document.getElementById('type-btn-run').classList.toggle('active', !other);
+  document.getElementById('type-btn-special').classList.toggle('active', other);
+  document.getElementById('f-title-label').textContent = other ? '활동명 *' : '런 제목 / 별칭 *';
+  document.getElementById('section-distance').style.display = other ? 'none' : '';
+  document.getElementById('section-courseurl').style.display = other ? 'none' : '';
+  // 예시 플레이스홀더는 러닝 전용이므로 '그외'에선 비운다
+  document.getElementById('f-title').placeholder = other ? '' : '예: 어린이대공원 붕어빵런';
+  document.getElementById('f-location').placeholder = other ? '' : '예: 어린이대공원 정문 앞';
+  document.getElementById('f-description').placeholder = other ? '' : '예: 이번 런은 슬로우로 진행합니다. 페이스는 7분 정도로 하겠습니다!';
+  if (other) {
+    document.getElementById('f-distance').value = '';
+    document.getElementById('f-course-url').value = '';
+  }
+}
 let existingPhotos = [];
 let myNickname = localStorage.getItem('rc_nickname') || '';
 
@@ -795,6 +823,7 @@ function openAddForm() {
   document.getElementById('f-course-url').value = '';
   document.getElementById('f-description').value = '';
   updateDescCount();
+  setFormType('run');
   renderFormParticipants();
   document.getElementById('photo-preview-row').innerHTML = '';
   document.getElementById('save-btn').textContent = '저장하기';
@@ -848,8 +877,8 @@ function renderCalendar() {
     const dots = dayRuns.map(r => {
       const isPast = r.date < today.toISOString().slice(0,10);
       const comp = isCompleted(r);
-      const cls = comp ? 'completed' : isPast ? 'past' : 'upcoming';
-      return `<div class="run-dot ${cls}" title="${comp ? '완료' : ''}"></div>`;
+      const cls = r.type === 'special' ? 'special' : comp ? 'completed' : isPast ? 'past' : 'upcoming';
+      return `<div class="run-dot ${cls}" title="${r.type === 'special' ? '특별 세션' : comp ? '완료' : ''}"></div>`;
     }).join('');
     grid.innerHTML += `<div class="${cls}" onclick="filterCalendarByDate('${dateStr}')">${d}<div class="run-dots">${dots}</div></div>`;
   }
@@ -924,6 +953,7 @@ function buildRunCard(run) {
   card.onclick = () => openDetail(run);
 
   const completedBadge = completed ? `<span class="badge badge-completed">✅ 완료</span>` : '';
+  const specialBadge = run.type === 'special' ? `<span class="badge badge-special">그외</span>` : '';
   const distanceBadge = run.distance ? `<span class="badge badge-distance">📏 ${run.distance}km</span>` : '';
 
   let participantsHtml = '';
@@ -944,7 +974,7 @@ function buildRunCard(run) {
   card.innerHTML = `
     <div class="card-header">
       <div class="card-title">${esc(run.title || '제목 없음')}</div>
-      <div class="card-badges">${completedBadge}${distanceBadge}</div>
+      <div class="card-badges">${specialBadge}${completedBadge}${distanceBadge}</div>
     </div>
     <div class="card-meta">
       ${run.date ? `<span class="meta-item">📅 ${formatDate(run.date)}</span>` : ''}
@@ -969,6 +999,7 @@ async function openDetail(run) {
   const detail = document.getElementById('detail-content');
   detail.innerHTML = `
     <div class="detail-hero">
+      ${run.type === 'special' ? `<div style="display:inline-block;background:rgba(255,255,255,0.22);color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;margin-bottom:8px;">그외</div>` : ''}
       <div class="detail-title">${esc(run.title || '제목 없음')}</div>
       <div class="card-meta">
         ${run.date ? `<span class="meta-item" style="color:rgba(255,255,255,0.9)">📅 ${formatDate(run.date)}</span>` : ''}
@@ -1034,7 +1065,8 @@ async function openDetail(run) {
   });
 
   // Weather + Dust — 위에서 잡아둔 슬롯에 나중에 채운다. 실패해도 나머지 UI에는 영향 없음.
-  const wx = await fetchWeatherAndDust(run.date, run.time);
+  // '그외' 활동은 날씨/대기 정보를 표시하지 않는다.
+  const wx = run.type === 'special' ? null : await fetchWeatherAndDust(run.date, run.time);
   const slot = document.getElementById('detail-weather-slot');
   if (wx && slot) {
     const di = dustIndex(wx.pm25);
@@ -1076,6 +1108,7 @@ function openEditModal(id) {
   document.getElementById('f-course-url').value = run.courseUrl || '';
   document.getElementById('f-description').value = run.description || '';
   updateDescCount();
+  setFormType(run.type === 'special' ? 'special' : 'run');
   document.getElementById('save-btn').textContent = '수정 저장';
   document.getElementById('edit-delete-btn').style.display = 'block';
 
@@ -1104,7 +1137,7 @@ async function saveRun() {
   const date = document.getElementById('f-date').value;
   const distanceVal = parseFloat(document.getElementById('f-distance').value);
   if (!title || !date) { showToast('제목과 날짜는 필수예요!'); return; }
-  if (!distanceVal || distanceVal <= 0) { showToast('거리를 입력해주세요!'); return; }
+  if (formType !== 'special' && (!distanceVal || distanceVal <= 0)) { showToast('거리를 입력해주세요!'); return; }
 
   const btn = document.getElementById('save-btn');
   btn.disabled = true;
@@ -1133,10 +1166,13 @@ async function saveRun() {
       description: document.getElementById('f-description').value.trim(),
       participants: formParticipants,
       photos: allPhotos,
+      type: formType === 'special' ? 'special' : null,
     };
     Object.keys(data).forEach(k => (data[k] === null || data[k] === '') && delete data[k]);
 
     if (editingRunId) {
+      // 특별 세션 → 일반 런으로 바꾼 경우 기존 type 필드 제거
+      if (formType !== 'special') data.type = firebase.firestore.FieldValue.delete();
       await db.collection('runs').doc(editingRunId).update(data);
       showToast('런이 수정됐어요 ✅');
     } else {
