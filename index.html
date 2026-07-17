@@ -493,11 +493,10 @@
       <div class="participant-chips" id="f-participant-chips" style="margin-top:8px; display:flex; flex-wrap:wrap; gap:4px;"></div>
     </div>
     <div class="modal-section" id="photo-section">
-      <label class="form-label">러닝 후 사진 (최대 2장)</label>
+      <label class="form-label">활동 사진 (최대 2장)</label>
       <div class="photo-upload-area" onclick="document.getElementById('f-photos').click()">
         <input type="file" id="f-photos" accept="image/*" multiple onchange="handlePhotoSelect(event)">
         <div>📷 사진을 탭해서 선택하세요</div>
-        <div style="font-size:12px; color: var(--text-secondary); margin-top:4px;">WebP로 자동 변환됩니다</div>
       </div>
       <div class="photo-preview-row" id="photo-preview-row"></div>
     </div>
@@ -722,6 +721,10 @@ function setFormType(t) {
   document.getElementById('f-title-label').textContent = other ? '활동명 *' : '런 제목 / 별칭 *';
   document.getElementById('section-distance').style.display = other ? 'none' : '';
   document.getElementById('section-courseurl').style.display = other ? 'none' : '';
+  // 예시 플레이스홀더는 러닝 전용이므로 '그외'에선 비운다
+  document.getElementById('f-title').placeholder = other ? '' : '예: 어린이대공원 붕어빵런';
+  document.getElementById('f-location').placeholder = other ? '' : '예: 어린이대공원 정문 앞';
+  document.getElementById('f-description').placeholder = other ? '' : '예: 이번 런은 슬로우로 진행합니다. 페이스는 7분 정도로 하겠습니다!';
   if (other) {
     document.getElementById('f-distance').value = '';
     document.getElementById('f-course-url').value = '';
