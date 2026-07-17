@@ -78,7 +78,9 @@
   .run-dot.upcoming { background: var(--primary); }
   .run-dot.past { background: #D1D5DB; }
   .run-dot.completed { background: #10B981; }
+  .run-dot.special { background: #8B5CF6; }
   .badge-completed { background: #D1FAE5; color: #065F46; }
+  .badge-special { background: #EDE9FE; color: #6D28D9; }
 
   /* LIST VIEW */
   .list-wrap { padding: 0 16px; }
@@ -442,6 +444,13 @@
     </div>
 
     <div class="modal-section">
+      <label class="form-label">종류</label>
+      <div class="analytics-tab-row" style="margin-bottom:0;">
+        <button type="button" class="analytics-tab active" id="type-btn-run" onclick="setFormType('run')">🏃 러닝</button>
+        <button type="button" class="analytics-tab" id="type-btn-special" onclick="setFormType('special')">✨ 특별 세션</button>
+      </div>
+    </div>
+    <div class="modal-section">
       <label class="form-label">런 제목 / 별칭 *</label>
       <input type="text" class="form-input" id="f-title" placeholder="예: 어린이대공원 붕어빵런" maxlength="100">
     </div>
@@ -460,7 +469,7 @@
       <input type="text" class="form-input" id="f-location" placeholder="예: 어린이대공원 정문 앞">
     </div>
     <div class="modal-section">
-      <label class="form-label">예상 거리 (km)</label>
+      <label class="form-label" id="f-distance-label">예상 거리 (km)</label>
       <input type="number" class="form-input" id="f-distance" placeholder="5" min="0" step="0.1">
     </div>
     <div class="modal-section">
@@ -702,6 +711,17 @@ let calYear, calMonth;
 let formParticipants = [];
 let formPhotos = [];
 let editingRunId = null;
+let formType = 'run'; // 'run' | 'special' — 러닝 vs 특별 원데이 세션
+
+// 추가/수정 폼의 종류 토글
+function setFormType(t) {
+  formType = t;
+  document.getElementById('type-btn-run').classList.toggle('active', t === 'run');
+  document.getElementById('type-btn-special').classList.toggle('active', t === 'special');
+  // 특별 세션은 거리가 없을 수 있으므로 선택 항목으로 안내
+  document.getElementById('f-distance-label').textContent = t === 'special' ? '거리 (선택)' : '예상 거리 (km)';
+  document.getElementById('f-distance').placeholder = t === 'special' ? '없으면 비워두세요' : '5';
+}
 let existingPhotos = [];
 let myNickname = localStorage.getItem('rc_nickname') || '';
 
@@ -795,6 +815,7 @@ function openAddForm() {
   document.getElementById('f-course-url').value = '';
   document.getElementById('f-description').value = '';
   updateDescCount();
+  setFormType('run');
   renderFormParticipants();
   document.getElementById('photo-preview-row').innerHTML = '';
   document.getElementById('save-btn').textContent = '저장하기';
@@ -848,8 +869,8 @@ function renderCalendar() {
     const dots = dayRuns.map(r => {
       const isPast = r.date < today.toISOString().slice(0,10);
       const comp = isCompleted(r);
-      const cls = comp ? 'completed' : isPast ? 'past' : 'upcoming';
-      return `<div class="run-dot ${cls}" title="${comp ? '완료' : ''}"></div>`;
+      const cls = r.type === 'special' ? 'special' : comp ? 'completed' : isPast ? 'past' : 'upcoming';
+      return `<div class="run-dot ${cls}" title="${r.type === 'special' ? '특별 세션' : comp ? '완료' : ''}"></div>`;
     }).join('');
     grid.innerHTML += `<div class="${cls}" onclick="filterCalendarByDate('${dateStr}')">${d}<div class="run-dots">${dots}</div></div>`;
   }
@@ -924,6 +945,7 @@ function buildRunCard(run) {
   card.onclick = () => openDetail(run);
 
   const completedBadge = completed ? `<span class="badge badge-completed">✅ 완료</span>` : '';
+  const specialBadge = run.type === 'special' ? `<span class="badge badge-special">✨ 특별 세션</span>` : '';
   const distanceBadge = run.distance ? `<span class="badge badge-distance">📏 ${run.distance}km</span>` : '';
 
   let participantsHtml = '';
@@ -944,7 +966,7 @@ function buildRunCard(run) {
   card.innerHTML = `
     <div class="card-header">
       <div class="card-title">${esc(run.title || '제목 없음')}</div>
-      <div class="card-badges">${completedBadge}${distanceBadge}</div>
+      <div class="card-badges">${specialBadge}${completedBadge}${distanceBadge}</div>
     </div>
     <div class="card-meta">
       ${run.date ? `<span class="meta-item">📅 ${formatDate(run.date)}</span>` : ''}
@@ -969,6 +991,7 @@ async function openDetail(run) {
   const detail = document.getElementById('detail-content');
   detail.innerHTML = `
     <div class="detail-hero">
+      ${run.type === 'special' ? `<div style="display:inline-block;background:rgba(255,255,255,0.22);color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;margin-bottom:8px;">✨ 특별 세션</div>` : ''}
       <div class="detail-title">${esc(run.title || '제목 없음')}</div>
       <div class="card-meta">
         ${run.date ? `<span class="meta-item" style="color:rgba(255,255,255,0.9)">📅 ${formatDate(run.date)}</span>` : ''}
@@ -1076,6 +1099,7 @@ function openEditModal(id) {
   document.getElementById('f-course-url').value = run.courseUrl || '';
   document.getElementById('f-description').value = run.description || '';
   updateDescCount();
+  setFormType(run.type === 'special' ? 'special' : 'run');
   document.getElementById('save-btn').textContent = '수정 저장';
   document.getElementById('edit-delete-btn').style.display = 'block';
 
@@ -1104,7 +1128,7 @@ async function saveRun() {
   const date = document.getElementById('f-date').value;
   const distanceVal = parseFloat(document.getElementById('f-distance').value);
   if (!title || !date) { showToast('제목과 날짜는 필수예요!'); return; }
-  if (!distanceVal || distanceVal <= 0) { showToast('거리를 입력해주세요!'); return; }
+  if (formType !== 'special' && (!distanceVal || distanceVal <= 0)) { showToast('거리를 입력해주세요!'); return; }
 
   const btn = document.getElementById('save-btn');
   btn.disabled = true;
@@ -1133,10 +1157,13 @@ async function saveRun() {
       description: document.getElementById('f-description').value.trim(),
       participants: formParticipants,
       photos: allPhotos,
+      type: formType === 'special' ? 'special' : null,
     };
     Object.keys(data).forEach(k => (data[k] === null || data[k] === '') && delete data[k]);
 
     if (editingRunId) {
+      // 특별 세션 → 일반 런으로 바꾼 경우 기존 type 필드 제거
+      if (formType !== 'special') data.type = firebase.firestore.FieldValue.delete();
       await db.collection('runs').doc(editingRunId).update(data);
       showToast('런이 수정됐어요 ✅');
     } else {
