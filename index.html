@@ -11,24 +11,34 @@
 <link rel="preconnect" href="https://firestore.googleapis.com">
 <link rel="preconnect" href="https://identitytoolkit.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   html { color-scheme: only light; }
 
   :root {
-    --primary: #2563EB;
-    --primary-light: #EFF6FF;
-    --bg: #F8F9FA;
+    /* 다정한 파프리카 — 디자인 가이드라인 v1.0 */
+    --ink: #232323;            /* 근검정 (텍스트/강조/다크카드) */
+    --yellow: #E2DB14;         /* 러닝 액센트 */
+    --yellow-dark: #B08A00;    /* 옐로우 텍스트 */
+    --green: #00AB5D;          /* 그외 액센트 */
+    --green-dark: #00934F;
+    --surface: #F4F4F1;        /* 라이트 카드/버튼 */
+    --muted: #9C9C96;
+
+    --primary: #232323;        /* 기존 코드 호환: 강조색=근검정 */
+    --primary-light: #F4F4F1;
+    --bg: #FFFFFF;
     --card: #FFFFFF;
-    --text: #1A1A1A;
-    --text-secondary: #6B7280;
-    --border: #E5E7EB;
-    --shadow: 0 2px 12px rgba(0,0,0,0.08);
-    --radius: 16px;
+    --text: #232323;
+    --text-secondary: #6E6E68;
+    --border: #E4E4E0;
+    --shadow: 0 2px 12px rgba(0,0,0,0.06);
+    --radius: 18px;
   }
 
   body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD Gothic Neo', sans-serif;
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', sans-serif;
     background: var(--bg);
     color: var(--text);
     min-height: 100vh;
@@ -376,6 +386,104 @@
     font-family: 'Archivo Black', sans-serif;
     padding: 0 6px;
   }
+
+  /* ═══════ 다정한 파프리카 테마 (v1.0) — 오버라이드 ═══════ */
+  body { padding-bottom: 96px; }
+  .header { padding: 14px 22px 12px; }
+  .header h1 { font-size: 19px; font-weight: 800; letter-spacing: -0.01em; color: var(--ink); }
+  .brand-logo {
+    width: 32px; height: 32px; border-radius: 9px; background: var(--ink);
+    color: var(--yellow); font-weight: 800; font-size: 15px;
+    display: flex; align-items: center; justify-content: center; flex: none;
+  }
+  .analytics-btn {
+    width: 32px; height: 32px; border-radius: 9px; background: var(--surface);
+    border: 1px solid var(--border); font-size: 15px; filter: grayscale(.2);
+  }
+
+  /* 전광판 → 다크 배너 */
+  .neon-ticker {
+    margin: 12px 22px 0; border-radius: 14px; height: auto; padding: 12px 0;
+    background: var(--ink); border: none;
+  }
+  .neon-ticker::before, .neon-ticker::after { display: none; }
+  .neon-track { color: var(--yellow); font-weight: 700; font-size: 12.5px; }
+
+  /* 캘린더 */
+  .calendar-wrap { padding: 16px 22px 8px; }
+  .cal-nav h2 { font-size: 18px; font-weight: 800; color: var(--ink); }
+  .cal-nav button {
+    width: 30px; height: 30px; border-radius: 8px; background: var(--surface);
+    border: 1px solid var(--border); color: var(--text-secondary); font-size: 15px;
+    display: inline-flex; align-items: center; justify-content: center; padding: 0;
+  }
+  .cal-day-label { font-weight: 700; color: var(--muted); }
+  .cal-day-label:first-child { color: var(--ink); }
+  .cal-day-label:last-child { color: var(--ink); }
+  .cal-cell { font-size: 15px; font-weight: 700; border-radius: 10px; }
+  .cal-cell.other-month { color: #D6D6D0; }
+  .cal-cell.sunday, .cal-cell.saturday { color: var(--ink); }
+  .cal-cell.today {
+    background: var(--yellow); color: var(--ink); font-weight: 800;
+    box-shadow: 0 0 0 4px rgba(226,219,20,.25);
+  }
+  .cal-cell.today.sunday, .cal-cell.today.saturday { color: var(--ink); }
+  /* 점: 러닝=옐로우, 완료=그린, 그외=그린 */
+  .run-dot { width: 5px; height: 5px; }
+  .run-dot.upcoming { background: var(--yellow); }
+  .run-dot.completed { background: var(--green); }
+  .run-dot.special   { background: var(--green); }
+  .run-dot.past      { background: #D6D6D0; }
+
+  /* 카드: 러닝=다크, 그외=라이트 */
+  .list-wrap { padding: 4px 22px 0; }
+  .section-title { color: var(--ink); font-weight: 800; font-size: 15px; text-transform: none; letter-spacing: 0; }
+  .run-card { border-radius: 18px; border: 1px solid var(--border); box-shadow: none; }
+  .run-card.upcoming, .run-card.past { border-color: var(--border); opacity: 1; }
+  .run-card.past { opacity: .55; }
+  /* 러닝(기본) = 다크 카드 */
+  .run-card.ptype-run { background: var(--ink); border-color: var(--ink); }
+  .run-card.ptype-run .card-title { color: #fff; }
+  .run-card.ptype-run .card-meta, .run-card.ptype-run .meta-item,
+  .run-card.ptype-run .card-desc, .run-card.ptype-run .card-creator { color: #B7B7B0; }
+  .run-card.ptype-run .card-desc { background: rgba(255,255,255,.06); }
+  .run-card.ptype-run .participant-label { color: #B7B7B0; }
+  .run-card.ptype-run .chip { background: rgba(255,255,255,.1); color: #EDEDEA; }
+  /* 그외 = 라이트 카드 */
+  .run-card.ptype-special { background: var(--surface); }
+
+  /* 배지 */
+  .badge-distance { background: var(--yellow); color: var(--ink); font-weight: 800; }
+  .run-card.ptype-run .badge-distance { background: var(--yellow); color: var(--ink); }
+  .badge-completed { background: rgba(0,171,93,.15); color: var(--green-dark); }
+  .badge-special { background: var(--green); color: #fff; }
+
+  /* FAB — 다크 + 옐로우 */
+  .fab {
+    background: var(--ink); color: var(--yellow); border-radius: 16px;
+    box-shadow: 0 12px 24px -6px rgba(35,35,35,.35); font-weight: 300; bottom: 96px;
+  }
+  .fab:hover { transform: scale(1.06); }
+
+  /* 기본 버튼 = 다크 */
+  .btn-primary { background: var(--ink); color: #fff; border-radius: 14px; }
+  .form-input:focus { border-color: var(--ink); }
+  .load-more-btn { color: var(--ink); font-weight: 700; }
+
+  /* 하단 네비게이션 */
+  .bottom-nav {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 150;
+    background: rgba(255,255,255,.96); backdrop-filter: blur(8px);
+    border-top: 1px solid var(--border);
+    display: flex; padding: 8px 0 max(8px, env(safe-area-inset-bottom));
+  }
+  .bottom-nav .bn-item {
+    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
+    background: none; border: none; cursor: pointer; color: var(--muted);
+    font-size: 10.5px; font-weight: 700; font-family: inherit; padding: 4px 0;
+  }
+  .bottom-nav .bn-item.active { color: var(--ink); }
+  .bottom-nav .bn-item svg { width: 22px; height: 22px; }
 </style>
 </head>
 <body>
@@ -383,8 +491,11 @@
 <!-- HEADER -->
 <div class="header">
   <div class="header-top">
-    <div style="display:flex; align-items:center; gap:6px;">
-      <h1>🏃‍♀️ 한강런 클럽</h1>
+    <div style="display:flex; align-items:center; gap:9px;">
+      <div class="brand-logo">한</div>
+      <h1>한강런 클럽</h1>
+    </div>
+    <div style="display:flex; gap:6px;">
       <button class="analytics-btn" onclick="openAnalytics()" title="애널리틱스" aria-label="애널리틱스">📊</button>
       <button class="analytics-btn" onclick="openTraining()" title="훈련 처방" aria-label="훈련 처방">⏱️</button>
     </div>
@@ -411,6 +522,22 @@
 
 <!-- FAB -->
 <button class="fab" onclick="openAddModal()" title="새 런 추가">＋</button>
+
+<!-- BOTTOM NAV (파프리카 v1.0) -->
+<nav class="bottom-nav">
+  <button class="bn-item active" onclick="window.scrollTo({top:0,behavior:'smooth'})">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3.5" y="5" width="17" height="15" rx="3"/><line x1="3.5" y1="9.5" x2="20.5" y2="9.5"/><line x1="8" y1="3" x2="8" y2="6"/><line x1="16" y1="3" x2="16" y2="6"/></svg>
+    <span>캘린더</span>
+  </button>
+  <button class="bn-item" onclick="openAnalytics()">
+    <svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="12" width="4.5" height="8" rx="1.2"/><rect x="9.7" y="7" width="4.5" height="13" rx="1.2"/><rect x="16.5" y="14" width="4.5" height="6" rx="1.2"/></svg>
+    <span>랭킹</span>
+  </button>
+  <button class="bn-item" onclick="openTraining()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3 2"/></svg>
+    <span>처방</span>
+  </button>
+</nav>
 
 <!-- REPORT OVERLAY (제거하려면 이 블록 삭제) -->
 <div id="report-overlay" onclick="if(event.target.id==='report-overlay')closeReport()" style="position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.5);display:none;">
@@ -949,7 +1076,7 @@ function buildRunCard(run) {
   const completed = isCompleted(run);
   const isPast = run.date < today || completed;
   const card = document.createElement('div');
-  card.className = `run-card ${isPast ? 'past' : 'upcoming'}`;
+  card.className = `run-card ${isPast ? 'past' : 'upcoming'} ${run.type === 'special' ? 'ptype-special' : 'ptype-run'}`;
   card.onclick = () => openDetail(run);
 
   const completedBadge = completed ? `<span class="badge badge-completed">✅ 완료</span>` : '';
