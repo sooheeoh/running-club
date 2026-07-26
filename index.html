@@ -401,13 +401,16 @@
     border: 1px solid var(--border); font-size: 15px; filter: grayscale(.2);
   }
 
-  /* 전광판 → 다크 배너 */
-  .neon-ticker {
-    margin: 12px 22px 0; border-radius: 14px; height: auto; padding: 12px 0;
-    background: var(--ink); border: none;
+  /* 다음 런 다크 배너 */
+  .next-banner {
+    margin: 12px 22px 0; border-radius: 14px; background: var(--ink);
+    padding: 12px 16px; display: flex; align-items: center; gap: 9px; cursor: pointer;
   }
-  .neon-ticker::before, .neon-ticker::after { display: none; }
-  .neon-track { color: var(--yellow); font-weight: 700; font-size: 12.5px; }
+  .nb-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--yellow); flex: none; }
+  .nb-label { font-size: 12.5px; font-weight: 700; color: #fff; flex: none; }
+  .nb-title { font-size: 12px; font-weight: 600; color: #B7B7B0; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .nb-dday { font-size: 12px; font-weight: 800; color: var(--yellow); flex: none; }
+  .next-banner.empty .nb-dot { background: #6E6E68; }
 
   /* 캘린더 */
   .calendar-wrap { padding: 16px 22px 8px; }
@@ -435,28 +438,33 @@
   .run-dot.special   { background: var(--green); }
   .run-dot.past      { background: #D6D6D0; }
 
-  /* 카드: 러닝=다크, 그외=라이트 */
+  /* 컴팩트 일정 카드 (8a) */
   .list-wrap { padding: 4px 22px 0; }
-  .section-title { color: var(--ink); font-weight: 800; font-size: 15px; text-transform: none; letter-spacing: 0; }
-  .run-card { border-radius: 18px; border: 1px solid var(--border); box-shadow: none; }
-  .run-card.upcoming, .run-card.past { border-color: var(--border); opacity: 1; }
-  .run-card.past { opacity: .55; }
-  /* 러닝(기본) = 다크 카드 */
+  .section-title { color: var(--ink); font-weight: 800; font-size: 15px; text-transform: none; letter-spacing: 0; padding: 18px 2px 10px; }
+  .run-card {
+    display: flex; align-items: center; gap: 13px; padding: 14px 16px;
+    border-radius: 18px; border: 1px solid var(--border); box-shadow: none; margin-bottom: 10px;
+  }
+  .run-card.past { opacity: .6; }
+  .rc-date { flex: none; width: 38px; text-align: center; }
+  .rc-day { font-size: 21px; font-weight: 800; line-height: 1; color: var(--ink); }
+  .rc-dow { font-size: 10px; font-weight: 700; color: var(--muted); margin-top: 3px; }
+  .rc-body { flex: 1; min-width: 0; }
+  .rc-title { font-size: 14px; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rc-sub { font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rc-pill { flex: none; font-size: 11px; font-weight: 800; padding: 6px 10px; border-radius: 999px; white-space: nowrap; }
+  /* 러닝 = 다크 카드 */
   .run-card.ptype-run { background: var(--ink); border-color: var(--ink); }
-  .run-card.ptype-run .card-title { color: #fff; }
-  .run-card.ptype-run .card-meta, .run-card.ptype-run .meta-item,
-  .run-card.ptype-run .card-desc, .run-card.ptype-run .card-creator { color: #B7B7B0; }
-  .run-card.ptype-run .card-desc { background: rgba(255,255,255,.06); }
-  .run-card.ptype-run .participant-label { color: #B7B7B0; }
-  .run-card.ptype-run .chip { background: rgba(255,255,255,.1); color: #EDEDEA; }
+  .run-card.ptype-run .rc-day { color: var(--yellow); }
+  .run-card.ptype-run .rc-title { color: #fff; }
+  .run-card.ptype-run .rc-sub { color: #B7B7B0; }
+  .run-card.ptype-run .rc-pill { background: var(--yellow); color: var(--ink); }
   /* 그외 = 라이트 카드 */
   .run-card.ptype-special { background: var(--surface); }
-
-  /* 배지 */
-  .badge-distance { background: var(--yellow); color: var(--ink); font-weight: 800; }
-  .run-card.ptype-run .badge-distance { background: var(--yellow); color: var(--ink); }
-  .badge-completed { background: rgba(0,171,93,.15); color: var(--green-dark); }
-  .badge-special { background: var(--green); color: #fff; }
+  .run-card.ptype-special .rc-day { color: var(--green); }
+  .run-card.ptype-special .rc-pill { background: var(--green); color: #fff; }
+  /* 완료 pill */
+  .rc-pill.done { background: rgba(0,171,93,.18) !important; color: var(--green-dark) !important; }
 
   /* FAB — 다크 + 옐로우 */
   .fab {
@@ -502,9 +510,10 @@
   </div>
 </div>
 
-<!-- NEON TICKER -->
-<div class="neon-ticker" id="neon-ticker">
-  <div class="neon-track" id="neon-track"></div>
+<!-- NEXT RUN BANNER -->
+<div class="next-banner empty" id="next-banner" onclick="openNextRun()">
+  <span class="nb-dot"></span><span class="nb-label">다음 런</span>
+  <span class="nb-title">예정된 런을 불러오는 중…</span>
 </div>
 
 <!-- MAIN CONTENT -->
@@ -783,28 +792,34 @@ function tickerPhrases() {
   return phrases.length >= 4 ? phrases : [...phrases, ...evergreen];
 }
 
+let _nextRunId = null;
 function renderTicker() {
-  const track = document.getElementById('neon-track');
-  if (!track) return;
-  const phrases = tickerPhrases();
-  const key = phrases.join('|');
-  if (key === _tickerLast) return; // 내용이 같으면 애니메이션을 다시 시작하지 않는다.
-  _tickerLast = key;
-
-  const full = [...phrases, ...phrases]; // 끊김 없는 루프를 위해 복제
-  track.innerHTML = '';
-  full.forEach((p, i) => {
-    const span = document.createElement('span');
-    span.className = 'neon-phrase';
-    span.textContent = p;
-    track.appendChild(span);
-    if (i < full.length - 1) {
-      const sep = document.createElement('span');
-      sep.className = 'neon-sep';
-      sep.textContent = '✦';
-      track.appendChild(sep);
-    }
-  });
+  const el = document.getElementById('next-banner');
+  if (!el) return;
+  const today = new Date().toISOString().slice(0,10);
+  const sortKey = r => `${r.date}T${r.time || '99:99'}`;
+  const upcoming = runs
+    .filter(r => r.date > today || (r.date === today && !isCompleted(r)))
+    .sort((a,b) => sortKey(a).localeCompare(sortKey(b)));
+  const next = upcoming[0];
+  if (!next) {
+    _nextRunId = null;
+    el.classList.add('empty');
+    el.innerHTML = `<span class="nb-dot"></span><span class="nb-label">다음 런</span><span class="nb-title">예정된 런이 없어요</span>`;
+    return;
+  }
+  _nextRunId = next.id;
+  el.classList.remove('empty');
+  const diff = Math.round((new Date(next.date+'T00:00:00') - new Date(today+'T00:00:00')) / 86400000);
+  const dday = diff <= 0 ? 'D-DAY' : `D-${diff}`;
+  const label = next.type === 'special' ? '다음 일정' : '다음 런';
+  const sub = [next.title, next.time].filter(Boolean).join(' · ');
+  el.innerHTML = `<span class="nb-dot"></span><span class="nb-label">${label}</span>` +
+    `<span class="nb-title">${esc(sub)}</span><span class="nb-dday">${dday}</span>`;
+}
+function openNextRun() {
+  const r = runs.find(x => x.id === _nextRunId);
+  if (r) openDetail(r);
 }
 
 // ─── FIREBASE INIT ───────────────────────────────────────────────
@@ -1079,39 +1094,23 @@ function buildRunCard(run) {
   card.className = `run-card ${isPast ? 'past' : 'upcoming'} ${run.type === 'special' ? 'ptype-special' : 'ptype-run'}`;
   card.onclick = () => openDetail(run);
 
-  const completedBadge = completed ? `<span class="badge badge-completed">✅ 완료</span>` : '';
-  const specialBadge = run.type === 'special' ? `<span class="badge badge-special">그외</span>` : '';
-  const distanceBadge = run.distance ? `<span class="badge badge-distance">📏 ${run.distance}km</span>` : '';
+  const d = new Date(run.date + 'T00:00:00');
+  const day = isNaN(d) ? '' : d.getDate();
+  const dow = isNaN(d) ? '' : ['일','월','화','수','목','금','토'][d.getDay()];
+  const sub = [run.time, run.location].filter(Boolean).join(' · ');
 
-  let participantsHtml = '';
-  if (run.participants && run.participants.length > 0) {
-    const chips = run.participants.map(p => `<span class="chip">${esc(p)}</span>`).join('');
-    participantsHtml = `<div class="card-participants"><div class="participant-label">👭 참여자 ${run.participants.length}명</div><div class="participant-chips">${chips}</div></div>`;
-  }
-
-  let photosHtml = '';
-  if (run.photos && run.photos.length > 0) {
-    const thumbs = run.photos.map(url => `<img class="photo-thumb" loading="lazy" decoding="async" src="${url}" onclick="event.stopPropagation(); openLightbox('${url}')">`).join('');
-    photosHtml = `<div class="card-photos">${thumbs}</div>`;
-  }
-
-  const creatorHtml = run.createdBy ? `<div class="card-creator">👑 ${esc(run.createdBy)} 개설</div>` : '';
-  const descHtml = run.description ? `<div class="card-desc">${esc(run.description)}</div>` : '';
+  let pill = '런', pillClass = '';
+  if (run.type === 'special') pill = '그외';
+  else if (completed) { pill = '완료'; pillClass = ' done'; }
+  else if (run.distance) pill = `${run.distance}km`;
 
   card.innerHTML = `
-    <div class="card-header">
-      <div class="card-title">${esc(run.title || '제목 없음')}</div>
-      <div class="card-badges">${specialBadge}${completedBadge}${distanceBadge}</div>
+    <div class="rc-date"><div class="rc-day">${day}</div><div class="rc-dow">${dow}</div></div>
+    <div class="rc-body">
+      <div class="rc-title">${esc(run.title || '제목 없음')}</div>
+      ${sub ? `<div class="rc-sub">${esc(sub)}</div>` : ''}
     </div>
-    <div class="card-meta">
-      ${run.date ? `<span class="meta-item">📅 ${formatDate(run.date)}</span>` : ''}
-      ${run.time ? `<span class="meta-item">🕐 ${run.time}</span>` : ''}
-      ${run.location ? `<span class="meta-item">📍 ${esc(run.location)}</span>` : ''}
-    </div>
-    ${descHtml}
-    ${creatorHtml}
-    ${participantsHtml}
-    ${photosHtml}`;
+    <div class="rc-pill${pillClass}">${esc(pill)}</div>`;
 
   return card;
 }
