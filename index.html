@@ -528,6 +528,39 @@
   .rrow.me .rr-rank, .rrow.me .rr-km, .rrow.me .rr-cnt { color: var(--yellow-dark); }
   .me-tag { font-size: 9px; font-weight: 800; background: var(--ink); color: var(--yellow); padding: 2px 6px; border-radius: 999px; margin-left: 4px; }
   .rank-empty { text-align: center; color: var(--text-secondary); padding: 40px 0; font-size: 14px; }
+
+  /* 상세 화면 (8b) */
+  .dt-hero { height: 90px; margin: 4px -20px 0; position: relative;
+    background-color: var(--surface);
+    background-image: repeating-linear-gradient(45deg, rgba(35,35,35,.06) 0 9px, transparent 9px 18px); }
+  .dt-hero.done { background-color: #E7F5EE; }
+  .dt-pill { position: absolute; left: 20px; bottom: 14px; font-size: 10px; font-weight: 800; padding: 6px 12px; border-radius: 999px; }
+  .dt-pill.open { background: var(--yellow); color: var(--ink); }
+  .dt-pill.done, .dt-pill.special { background: var(--green); color: #fff; }
+  .dt-main { padding-top: 16px; }
+  .dt-title { font-size: 22px; font-weight: 800; letter-spacing: -.01em; line-height: 1.25; }
+  .dt-sub { font-size: 12.5px; font-weight: 600; color: var(--text-secondary); margin-top: 6px; }
+  .dt-stats { display: flex; background: var(--ink); border-radius: 18px; padding: 16px 8px; margin-top: 16px; color: #fff; }
+  .dt-stat { flex: 1; text-align: center; border-right: 1px solid #3A3A34; }
+  .dt-stat:last-child { border-right: none; }
+  .dt-num { font-size: 22px; font-weight: 800; line-height: 1; }
+  .dt-num small { font-size: 12px; }
+  .dt-stat:first-child .dt-num { color: var(--yellow); }
+  .dt-lbl { font-size: 11px; font-weight: 700; color: var(--muted); margin-top: 5px; }
+  .dt-block { padding: 18px 0 0; }
+  .dt-block-t { font-size: 15px; font-weight: 800; margin-bottom: 11px; }
+  .dt-desc { background: var(--surface); border-radius: 14px; padding: 13px 15px; font-size: 13.5px; line-height: 1.5; color: #4A4A44; }
+  .dt-avs { display: flex; gap: 10px; flex-wrap: wrap; }
+  .dt-avcol { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .dt-av { position: relative; width: 46px; height: 46px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800; }
+  .dt-crown { position: absolute; bottom: -2px; right: -2px; font-size: 13px; }
+  .dt-avx { position: absolute; top: -4px; right: -4px; width: 18px; height: 18px; border-radius: 50%; border: none; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.2); color: #6E6E68; font-size: 12px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; }
+  .dt-avname { font-size: 11px; font-weight: 600; color: #4A4A44; }
+  .dt-invite { width: 46px; height: 46px; border-radius: 50%; border: 1.5px dashed var(--border); background: none; color: var(--muted); font-size: 24px; font-weight: 300; cursor: pointer; }
+  .dt-actions { display: flex; gap: 10px; margin-top: 22px; }
+  .dt-join { flex: 1; height: 52px; border-radius: 16px; border: none; background: var(--ink); color: var(--yellow); font-size: 16px; font-weight: 800; cursor: pointer; font-family: inherit; }
+  .dt-join.out { background: var(--surface); color: var(--text-secondary); }
+  .dt-edit { width: 72px; border-radius: 16px; border: 1px solid var(--border); background: var(--card); color: var(--ink); font-weight: 800; font-size: 14px; cursor: pointer; font-family: inherit; }
 </style>
 </head>
 <body>
@@ -1170,85 +1203,92 @@ async function openDetailById(id) {
 }
 
 async function openDetail(run) {
+  const isSpecial = run.type === 'special';
+  const completed = isCompleted(run);
+  const today = new Date().toISOString().slice(0,10);
+  const parts = run.participants || [];
+
+  let pillTxt = '모집중', pillCls = 'open';
+  if (isSpecial) { pillTxt = '그외'; pillCls = 'special'; }
+  else if (completed) { pillTxt = '완료'; pillCls = 'done'; }
+
+  let stat3lbl = '디데이', stat3val;
+  if (completed) { stat3lbl = '상태'; stat3val = '완료'; }
+  else {
+    const diff = Math.round((new Date(run.date+'T00:00:00') - new Date(today+'T00:00:00')) / 86400000);
+    stat3val = diff <= 0 ? 'D-DAY' : `D-${diff}`;
+  }
+  const subLine = [run.date ? formatDate(run.date) : '', run.time, run.location].filter(Boolean).join(' · ');
+
   const detail = document.getElementById('detail-content');
   detail.innerHTML = `
-    <div class="detail-hero">
-      ${run.type === 'special' ? `<div style="display:inline-block;background:rgba(255,255,255,0.22);color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;margin-bottom:8px;">그외</div>` : ''}
-      <div class="detail-title">${esc(run.title || '제목 없음')}</div>
-      <div class="card-meta">
-        ${run.date ? `<span class="meta-item" style="color:rgba(255,255,255,0.9)">📅 ${formatDate(run.date)}</span>` : ''}
-        ${run.time ? `<span class="meta-item" style="color:rgba(255,255,255,0.9)">🕐 ${run.time}</span>` : ''}
+    <div class="dt-hero ${pillCls === 'done' ? 'done' : ''}"><span class="dt-pill ${pillCls}">${pillTxt}</span></div>
+    <div class="dt-main">
+      <div class="dt-title">${esc(run.title || '제목 없음')}</div>
+      <div class="dt-sub">${esc(subLine)}</div>
+      <div class="dt-stats">
+        <div class="dt-stat"><div class="dt-num">${run.distance ? run.distance : '–'}<small>${run.distance ? 'km' : ''}</small></div><div class="dt-lbl">거리</div></div>
+        <div class="dt-stat"><div class="dt-num">${parts.length}<small>명</small></div><div class="dt-lbl">참여</div></div>
+        <div class="dt-stat"><div class="dt-num">${stat3val}</div><div class="dt-lbl">${stat3lbl}</div></div>
       </div>
-      ${run.createdBy ? `<div style="margin-top:8px;font-size:12px;opacity:0.75">👑 ${esc(run.createdBy)} 개설</div>` : ''}
-    </div>
-    <div id="detail-body" style="padding: 0 0 8px"></div>`;
+      <div id="detail-body"></div>
+    </div>`;
 
   openModal('detail-modal-overlay');
-
   const body = document.getElementById('detail-body');
 
-  // Description (optional) — 눈에 잘 띄게 상단에 표시
   if (run.description) {
-    body.innerHTML += `<div class="detail-section"><div class="detail-desc">${esc(run.description)}</div></div>`;
+    body.innerHTML += `<div class="dt-block"><div class="dt-desc">${esc(run.description)}</div></div>`;
+  }
+  if (run.courseUrl) {
+    body.innerHTML += `<div class="dt-block"><a href="${esc(run.courseUrl)}" target="_blank" style="font-size:13px;font-weight:700;color:var(--ink)">🗺️ 코스 보기 →</a></div>`;
   }
 
-  // Info section
-  let infoHtml = '<div class="detail-section"><div class="detail-section-title">정보</div><div class="detail-info-grid">';
-  if (run.location) infoHtml += `<div class="detail-info-item"><span class="detail-info-icon">📍</span><span class="detail-info-text"><a href="https://map.kakao.com/link/search/${encodeURIComponent(run.location)}" target="_blank">${esc(run.location)}</a></span></div>`;
-  if (run.distance) infoHtml += `<div class="detail-info-item"><span class="detail-info-icon">📏</span><span class="detail-info-text">${run.distance}km</span></div>`;
-  if (run.courseUrl) infoHtml += `<div class="detail-info-item"><span class="detail-info-icon">🗺️</span><span class="detail-info-text"><a href="${esc(run.courseUrl)}" target="_blank">코스 보기</a></span></div>`;
-  infoHtml += '</div></div>';
-  body.innerHTML += infoHtml;
-
-  // Weather placeholder — 날씨는 비동기라, 자리만 먼저 잡아두고 나중에 채운다.
-  // (날씨 로딩이 느려도 아래 참여자/사진/수정 버튼이 즉시 보이도록)
-  body.innerHTML += `<div id="detail-weather-slot"></div>`;
-
-  // Participants
-  if (run.participants && run.participants.length > 0) {
-    const chips = run.participants.map(p =>
-      `<span class="chip">${esc(p)}<button class="chip-remove" onclick="removeParticipantFromRun('${run.id}', '${esc(p)}')">×</button></span>`
-    ).join('');
-    body.innerHTML += `
-      <div class="detail-section">
-        <div class="detail-section-title">참여자 (${run.participants.length}명)</div>
-        <div class="participant-chips">${chips}</div>
-      </div>`;
-  }
-
+  // 참여자 아바타
+  const avs = parts.map(p => {
+    const s = avatarStyle(p);
+    const crown = p === run.createdBy ? '<span class="dt-crown">👑</span>' : '';
+    return `<div class="dt-avcol"><div class="dt-av" style="background:${s.bg};color:${s.color}">${esc(p.charAt(0))}${crown}<button class="dt-avx" onclick="removeParticipantFromRun('${run.id}','${esc(p)}')">×</button></div><span class="dt-avname">${esc(p)}</span></div>`;
+  }).join('');
   body.innerHTML += `
-    <div class="detail-section">
-      <div class="participant-input-row">
-        <input type="text" class="form-input" id="detail-participant-input" placeholder="이름 추가" style="font-size:14px;">
+    <div class="dt-block">
+      <div class="dt-block-t">참여자 <span style="color:var(--yellow-dark)">${parts.length}</span></div>
+      <div class="dt-avs">${avs}
+        <div class="dt-avcol"><button class="dt-invite" onclick="document.getElementById('detail-participant-input').focus()">+</button><span class="dt-avname">초대</span></div>
+      </div>
+      <div class="participant-input-row" style="margin-top:12px">
+        <input type="text" class="form-input" id="detail-participant-input" placeholder="이름으로 추가" style="font-size:14px;">
         <button class="btn-add" onclick="addParticipantToRun('${run.id}')">＋</button>
       </div>
     </div>`;
 
+  body.innerHTML += `<div id="detail-weather-slot"></div>`;
+
   if (run.photos && run.photos.length > 0) {
     const imgs = run.photos.map(url => `<img class="gallery-img" loading="lazy" decoding="async" src="${url}" onclick="openLightbox('${url}')">`).join('');
-    body.innerHTML += `<div class="detail-section"><div class="detail-section-title">사진</div><div class="photo-gallery">${imgs}</div></div>`;
+    body.innerHTML += `<div class="dt-block"><div class="dt-block-t">사진</div><div class="photo-gallery">${imgs}</div></div>`;
   }
 
-  body.innerHTML += `<div style="margin-top:20px; display:flex; gap:10px;">
-    <button class="btn-primary" style="flex:1" onclick="closeModal('detail-modal-overlay'); openEditModal('${run.id}')">✏️ 수정하기</button>
-  </div>`;
+  const iAmIn = myNickname && parts.includes(myNickname);
+  const joinBtn = !myNickname ? '' : (iAmIn
+    ? `<button class="dt-join out" onclick="removeParticipantFromRun('${run.id}','${esc(myNickname)}')">참여 취소</button>`
+    : `<button class="dt-join" onclick="document.getElementById('detail-participant-input').value='${esc(myNickname)}';addParticipantToRun('${run.id}')">참여하기</button>`);
+  body.innerHTML += `<div class="dt-actions">${joinBtn}<button class="dt-edit" onclick="closeModal('detail-modal-overlay');openEditModal('${run.id}')">수정</button></div>`;
 
-  // 이벤트 리스너는 모든 innerHTML 조작 이후에 붙인다 (innerHTML += 가 기존 노드를 재생성하므로).
   document.getElementById('detail-participant-input').addEventListener('keydown', e => {
     if (e.key === 'Enter') { e.preventDefault(); addParticipantToRun(run.id); }
   });
 
-  // Weather + Dust — 위에서 잡아둔 슬롯에 나중에 채운다. 실패해도 나머지 UI에는 영향 없음.
-  // '그외' 활동은 날씨/대기 정보를 표시하지 않는다.
-  const wx = run.type === 'special' ? null : await fetchWeatherAndDust(run.date, run.time);
+  // 날씨 — '그외'는 표시 안 함
+  const wx = isSpecial ? null : await fetchWeatherAndDust(run.date, run.time);
   const slot = document.getElementById('detail-weather-slot');
   if (wx && slot) {
     const di = dustIndex(wx.pm25);
     const wc = weatherCondition(wx.weatherCode);
     const timeLabel = run.time ? ` (${run.time} 기준)` : '';
     slot.innerHTML = `
-      <div class="detail-section">
-        <div class="detail-section-title">날씨 & 대기환경${timeLabel}</div>
+      <div class="dt-block">
+        <div class="dt-block-t">날씨 & 대기환경${timeLabel}</div>
         <div class="weather-grid">
           <div class="weather-card"><div class="weather-icon">${wc.icon}</div><div class="weather-value" style="font-size:12px">${wc.label}</div><div class="weather-label">날씨</div></div>
           <div class="weather-card"><div class="weather-icon">🌡</div><div class="weather-value">${wx.temp}°C</div><div class="weather-label">기온</div></div>
