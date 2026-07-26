@@ -1244,9 +1244,9 @@ async function openDetail(run) {
     body.innerHTML += `<div class="dt-block"><a href="${esc(run.courseUrl)}" target="_blank" style="font-size:13px;font-weight:700;color:var(--ink)">🗺️ 코스 보기 →</a></div>`;
   }
 
-  // 참여자 아바타
+  // 참여자 아바타 — 색은 그때그때 랜덤
   const avs = parts.map(p => {
-    const s = avatarStyle(p);
+    const s = _avPalette[Math.floor(Math.random() * _avPalette.length)];
     const crown = p === run.createdBy ? '<span class="dt-crown">👑</span>' : '';
     return `<div class="dt-avcol"><div class="dt-av" style="background:${s.bg};color:${s.color}">${esc(p.charAt(0))}${crown}<button class="dt-avx" onclick="removeParticipantFromRun('${run.id}','${esc(p)}')">×</button></div><span class="dt-avname">${esc(p)}</span></div>`;
   }).join('');
@@ -1870,14 +1870,20 @@ function renderRanking() {
     return;
   }
 
-  const av = (name, cls) => {
-    const s = avatarStyle(name);
+  // 순위별 고정 색: 1등=딩딩(옐로우), 2등=콜라(레드), 3등=방랑(그린), 4등↓=호호(잉크)
+  const rankAv = place =>
+    place === 1 ? { bg: '#E2DB14', color: '#232323' } :
+    place === 2 ? { bg: '#FF4949', color: '#fff' } :
+    place === 3 ? { bg: '#00AB5D', color: '#fff' } :
+                  { bg: '#232323', color: '#E2DB14' };
+  const av = (name, cls, place) => {
+    const s = rankAv(place);
     return `<div class="${cls}" style="background:${s.bg};color:${s.color}">${esc((name || '?').charAt(0))}</div>`;
   };
   const pcol = (entry, place) => {
     if (!entry) return `<div class="pcol p${place}"></div>`;
     const crown = place === 1 ? `<div class="pcrown">👑</div>` : '';
-    return `<div class="pcol p${place}">${crown}${av(entry.name, 'pav')}` +
+    return `<div class="pcol p${place}">${crown}${av(entry.name, 'pav', place)}` +
       `<div class="pname">${esc(entry.name)}</div><div class="pkm">${fmtKm(entry.distance)}km</div>` +
       `<div class="pbar">${place}</div></div>`;
   };
@@ -1886,7 +1892,7 @@ function renderRanking() {
   const rows = lb.slice(3).map((e, i) => {
     const me = myNickname && e.name === myNickname ? ' me' : '';
     const tag = me ? `<span class="me-tag">나</span>` : '';
-    return `<div class="rrow${me}"><div class="rr-rank">${i + 4}</div>${av(e.name, 'rr-av')}` +
+    return `<div class="rrow${me}"><div class="rr-rank">${i + 4}</div>${av(e.name, 'rr-av', i + 4)}` +
       `<div class="rr-name">${esc(e.name)}${tag}</div>` +
       `<div class="rr-val"><div class="rr-km">${fmtKm(e.distance)}<small>km</small></div><div class="rr-cnt">${e.count}회</div></div></div>`;
   }).join('');
