@@ -571,6 +571,8 @@
   .cal-cell:hover { background: var(--surface); }
   .cal-cell.other-month { color: #4A4A45; }
   .cal-day-label:first-child, .cal-day-label:last-child { color: var(--text); }
+  .cal-cell.sunday, .cal-cell.saturday { color: var(--text); }
+  .cal-cell.today.sunday, .cal-cell.today.saturday { color: var(--ink); }
   .cal-nav button { background: var(--surface); border-color: var(--border); color: var(--text-secondary); }
   .cal-cell.today { background: var(--yellow); color: var(--ink); }
   .cal-cell.today.sunday, .cal-cell.today.saturday { color: var(--ink); }
@@ -612,11 +614,7 @@
 <div class="header">
   <div class="header-top">
     <div style="display:flex; align-items:center; gap:9px;">
-      <img src="paprika_logotype.png" alt="paprika" class="brand-img">
-    </div>
-    <div style="display:flex; gap:6px;">
-      <button class="analytics-btn" onclick="showTab('ranking')" title="랭킹" aria-label="랭킹">📊</button>
-      <button class="analytics-btn" onclick="openTraining()" title="훈련 처방" aria-label="훈련 처방">⏱️</button>
+      <img src="paprika_mark.png" alt="paprika" class="brand-img">
     </div>
   </div>
 </div>
