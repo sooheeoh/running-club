@@ -14,26 +14,26 @@
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  html { color-scheme: only light; }
+  html { color-scheme: dark; }
 
   :root {
-    /* 다정한 파프리카 — 디자인 가이드라인 v1.0 */
-    --ink: #232323;            /* 근검정 (텍스트/강조/다크카드) */
+    /* 다정한 파프리카 — 다크 (미드나잇) v1.1 */
+    --ink: #121211;            /* 가장 깊은 블록 (스탯 스트립·다크 버튼) */
     --yellow: #E2DB14;         /* 러닝 액센트 */
-    --yellow-dark: #B08A00;    /* 옐로우 텍스트 */
-    --green: #00AB5D;          /* 그외 액센트 */
-    --green-dark: #00934F;
-    --surface: #F4F4F1;        /* 라이트 카드/버튼 */
-    --muted: #9C9C96;
+    --yellow-dark: #E2DB14;    /* 다크 위 옐로우 텍스트 */
+    --green: #00B863;          /* 그외 액센트 */
+    --green-dark: #00B863;
+    --surface: #2C2C2A;        /* 올려진 카드/버튼/입력 */
+    --muted: #6E6E66;
 
-    --primary: #232323;        /* 기존 코드 호환: 강조색=근검정 */
-    --primary-light: #F4F4F1;
-    --bg: #FFFFFF;
-    --card: #FFFFFF;
-    --text: #232323;
-    --text-secondary: #6E6E68;
-    --border: #E4E4E0;
-    --shadow: 0 2px 12px rgba(0,0,0,0.06);
+    --primary: #F1F1EE;        /* 강조 텍스트 = 밝게 */
+    --primary-light: #2C2C2A;
+    --bg: #161615;             /* 페이지 (가장 어두운 바탕) */
+    --card: #232322;           /* 모달/기본 카드 */
+    --text: #F1F1EE;
+    --text-secondary: #A0A098;
+    --border: #34342F;
+    --shadow: 0 6px 20px rgba(0,0,0,0.4);
     --radius: 18px;
   }
 
@@ -559,6 +559,51 @@
   .dt-join { flex: 1; height: 52px; border-radius: 16px; border: none; background: var(--ink); color: var(--yellow); font-size: 16px; font-weight: 800; cursor: pointer; font-family: inherit; }
   .dt-join.out { background: var(--surface); color: var(--text-secondary); }
   .dt-edit { width: 72px; border-radius: 16px; border: 1px solid var(--border); background: var(--card); color: var(--ink); font-weight: 800; font-size: 14px; cursor: pointer; font-family: inherit; }
+
+  /* ═══════ 다크(미드나잇) 보정 — 라이트 가정 컴포넌트 오버라이드 ═══════ */
+  body { background: var(--bg); }
+  .cal-nav h2, .section-title, .rank-title, .dt-block-t, .dt-title { color: var(--text); }
+  .header { background: var(--bg); border-bottom-color: var(--border); }
+  .analytics-btn { background: var(--surface); border-color: var(--border); filter: none; }
+  .next-banner { background: var(--surface); }
+  .next-banner.empty .nb-dot { background: var(--muted); }
+  /* 캘린더 */
+  .cal-cell:hover { background: var(--surface); }
+  .cal-cell.other-month { color: #4A4A45; }
+  .cal-day-label:first-child, .cal-day-label:last-child { color: var(--text); }
+  .cal-nav button { background: var(--surface); border-color: var(--border); color: var(--text-secondary); }
+  .cal-cell.today { background: var(--yellow); color: var(--ink); }
+  .cal-cell.today.sunday, .cal-cell.today.saturday { color: var(--ink); }
+  /* 카드: 다크 위에서 러닝=올려진 카드, 그외=올려진 카드(그린), 지난=아웃라인 */
+  .run-card.ptype-run { background: var(--surface); border-color: var(--surface); }
+  .run-card.ptype-special { background: var(--surface); }
+  .run-card.past { opacity: 1; background: transparent; border-color: var(--border); }
+  .run-card.past .rc-title { color: var(--text-secondary); }
+  .run-card.past .rc-day { color: var(--muted); }
+  .run-card.past .rc-pill { background: #3A3A37 !important; color: var(--muted) !important; }
+  /* FAB — 옐로우 + 다크 아이콘 */
+  .fab { background: var(--yellow); color: var(--ink); box-shadow: 0 12px 28px -6px rgba(226,219,20,.4); }
+  /* 하단 네비 */
+  .bottom-nav { background: rgba(22,22,21,.96); border-top-color: var(--border); }
+  /* 모달·폼 */
+  .modal, .nickname-modal-box { background: var(--card); }
+  .modal-handle { background: #46463F; }
+  .form-input { background: var(--surface); border-color: var(--border); color: var(--text); }
+  .form-input::placeholder { color: var(--muted); }
+  .btn-danger { background: rgba(255,73,73,.15); color: #FF6B6B; }
+  .load-more-btn { background: var(--surface); border-color: var(--border); }
+  /* 랭킹 */
+  .rank-tabs { background: var(--surface); }
+  .rrow { border-bottom-color: var(--border); }
+  .rrow.me { background: rgba(226,219,20,.12); border-color: rgba(226,219,20,.32); }
+  .rrow.me .rr-rank, .rrow.me .rr-km, .rrow.me .rr-cnt { color: var(--yellow); }
+  /* 상세 */
+  .dt-hero { background-color: var(--surface); background-image: repeating-linear-gradient(45deg, rgba(255,255,255,.05) 0 9px, transparent 9px 18px); }
+  .dt-hero.done { background-color: #16352A; }
+  .dt-desc { background: var(--surface); color: var(--text); }
+  .dt-avname { color: var(--text-secondary); }
+  .dt-avx { background: var(--card); color: var(--text-secondary); box-shadow: none; border: 1px solid var(--border); }
+  .dt-edit { background: var(--surface); border-color: var(--border); color: var(--text); }
 </style>
 </head>
 <body>
