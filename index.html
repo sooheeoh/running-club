@@ -587,6 +587,7 @@
   .fab { background: var(--yellow); color: var(--ink); box-shadow: 0 12px 28px -6px rgba(226,219,20,.4); }
   /* 하단 네비 */
   .bottom-nav { background: rgba(22,22,21,.96); border-top-color: var(--border); }
+  .bottom-nav .bn-item.active { color: var(--yellow); }
   /* 모달·폼 */
   .modal, .nickname-modal-box { background: var(--card); }
   .modal-handle { background: #46463F; }
@@ -643,8 +644,8 @@
   <div class="rank-head">
     <h2 class="rank-title">랭킹</h2>
     <div class="rank-tabs">
-      <button class="rank-tab active" id="rtab-all" onclick="setRankTab('all')">전체</button>
-      <button class="rank-tab" id="rtab-month" onclick="setRankTab('month')">이번 달</button>
+      <button class="rank-tab active" id="rtab-month" onclick="setRankTab('month')">이번 달</button>
+      <button class="rank-tab" id="rtab-all" onclick="setRankTab('all')">전체</button>
     </div>
   </div>
   <div id="ranking-content"></div>
@@ -1870,7 +1871,7 @@ function buildLeaderboard(filteredRuns) {
 }
 
 // ─── 탭 전환 & 랭킹 화면 (파프리카 v1.0) ─────────────────────────
-let rankTab = 'all';
+let rankTab = 'month';
 function showTab(name) {
   const isRank = name === 'ranking';
   document.getElementById('view-calendar').style.display = isRank ? 'none' : '';
