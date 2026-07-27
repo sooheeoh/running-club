@@ -391,11 +391,7 @@
   body { padding-bottom: 96px; }
   .header { padding: 14px 22px 12px; }
   .header h1 { font-size: 19px; font-weight: 800; letter-spacing: -0.01em; color: var(--ink); }
-  .brand-logo {
-    width: 32px; height: 32px; border-radius: 9px; background: var(--ink);
-    color: var(--yellow); font-weight: 800; font-size: 15px;
-    display: flex; align-items: center; justify-content: center; flex: none;
-  }
+  .brand-img { height: 26px; border-radius: 7px; display: block; }
   .analytics-btn {
     width: 32px; height: 32px; border-radius: 9px; background: var(--surface);
     border: 1px solid var(--border); font-size: 15px; filter: grayscale(.2);
@@ -534,7 +530,9 @@
     background-color: var(--surface);
     background-image: repeating-linear-gradient(45deg, rgba(35,35,35,.06) 0 9px, transparent 9px 18px); }
   .dt-hero.done { background-color: #E7F5EE; }
-  .dt-pill { position: absolute; left: 20px; bottom: 14px; font-size: 10px; font-weight: 800; padding: 6px 12px; border-radius: 999px; }
+  .dt-hero { overflow: hidden; }
+  .dt-hero-wm { position: absolute; right: -30px; bottom: -14px; height: 96px; width: auto; opacity: .16; pointer-events: none; }
+  .dt-pill { position: absolute; left: 20px; bottom: 14px; z-index: 1; font-size: 10px; font-weight: 800; padding: 6px 12px; border-radius: 999px; }
   .dt-pill.open { background: var(--yellow); color: var(--ink); }
   .dt-pill.done, .dt-pill.special { background: var(--green); color: #fff; }
   .dt-main { padding-top: 16px; }
@@ -569,8 +567,7 @@
 <div class="header">
   <div class="header-top">
     <div style="display:flex; align-items:center; gap:9px;">
-      <div class="brand-logo">한</div>
-      <h1>한강런 클럽</h1>
+      <img src="paprika_logotype.png" alt="paprika" class="brand-img">
     </div>
     <div style="display:flex; gap:6px;">
       <button class="analytics-btn" onclick="showTab('ranking')" title="랭킹" aria-label="랭킹">📊</button>
@@ -1222,7 +1219,7 @@ async function openDetail(run) {
 
   const detail = document.getElementById('detail-content');
   detail.innerHTML = `
-    <div class="dt-hero ${pillCls === 'done' ? 'done' : ''}"><span class="dt-pill ${pillCls}">${pillTxt}</span></div>
+    <div class="dt-hero ${pillCls === 'done' ? 'done' : ''}"><img src="paprika_mark.png" alt="" class="dt-hero-wm"><span class="dt-pill ${pillCls}">${pillTxt}</span></div>
     <div class="dt-main">
       <div class="dt-title">${esc(run.title || '제목 없음')}</div>
       <div class="dt-sub">${esc(subLine)}</div>
