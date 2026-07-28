@@ -1058,6 +1058,7 @@ function renderFromCache() {
 
 // ─── NICKNAME ────────────────────────────────────────────────────
 function openAddModal() {
+  pendingJoinRunId = null; // 참여용 닉네임 요청과 섞이지 않도록 초기화
   if (!myNickname) {
     openModal('nickname-modal-overlay');
     setTimeout(() => document.getElementById('f-nickname').focus(), 350);
