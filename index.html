@@ -390,7 +390,7 @@
   .neon-track {
     display: inline-flex;
     gap: 0;
-    animation: neon-scroll 38s linear infinite;
+    animation: neon-scroll 60s linear infinite;
     /* GPU 합성 레이어로 고정해 모바일에서 렌더링이 떨어지지 않게 */
     will-change: transform;
     -webkit-backface-visibility: hidden;
@@ -408,7 +408,7 @@
     text-transform: uppercase;
     letter-spacing: 0.3px;
     color: #39FF8F;
-    text-shadow: 0 0 8px #39FF8F, 0 0 18px #39FF8F, 0 0 32px #1aff70;
+    text-shadow: 0 0 7px #39FF8F, 0 0 16px #1aff70;
     padding: 0 24px;
     font-family: 'Archivo Black', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
   }
@@ -996,10 +996,24 @@ function renderNeonTicker() {
   const track = document.getElementById('neon-track');
   if (!track) return;
   const phrases = tickerPhrases();
-  const base = phrases.map(p => `<span class="neon-phrase">${esc(p)}</span>`).join('');
-  // 한 세트(half)가 화면보다 넓어야 -50% 루프가 끊기지 않는다. 넉넉히 3회 반복해 채운다.
-  const half = base + base + base;
-  track.innerHTML = half + half; // 동일한 두 세트 = 끊김 없는 무한 루프
+  const key = phrases.join('|');
+  if (key === _tickerLast) return; // 내용이 같으면 다시 그리지 않는다(애니메이션 재시작·깜빡임 방지)
+  _tickerLast = key;
+
+  const unit = phrases.map(p => `<span class="neon-phrase">${esc(p)}</span>`).join('');
+  // 한 세트(half)가 화면 너비보다 확실히 넓어질 때까지 반복 → -50% 루프가 매끄럽게 이어진다.
+  const vw = window.innerWidth || 390;
+  let half = unit, reps = 1;
+  track.innerHTML = half;
+  while (track.scrollWidth < vw * 1.3 && reps < 30) { reps++; half += unit; track.innerHTML = half; }
+  track.innerHTML = half + half; // 동일한 두 세트
+
+  // 폭에 비례해 재생 시간을 정해 '속도'를 일정하고 느리게 유지한다.
+  const halfWidth = track.scrollWidth / 2;
+  if (halfWidth > 0) {
+    const SPEED = 40; // px/초 (작을수록 느림)
+    track.style.animationDuration = Math.round(halfWidth / SPEED) + 's';
+  }
 }
 
 let _nextRunId = null;
