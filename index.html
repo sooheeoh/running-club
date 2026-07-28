@@ -1315,7 +1315,7 @@ async function openDetail(run) {
     <div class="dt-block">
       <div class="dt-block-t">참여자 <span style="color:var(--yellow-dark)">${parts.length}</span></div>
       <div class="dt-avs">${avs}
-        <div class="dt-avcol"><button class="dt-invite" onclick="document.getElementById('detail-participant-input').focus()">+</button><span class="dt-avname">초대</span></div>
+        <div class="dt-avcol"><button class="dt-invite" onclick="copyInvite('${run.id}')">🔗</button><span class="dt-avname">초대</span></div>
       </div>
       <div class="participant-input-row" style="margin-top:12px">
         <input type="text" class="form-input" id="detail-participant-input" placeholder="이름으로 추가" style="font-size:14px;">
@@ -1361,6 +1361,53 @@ async function openDetail(run) {
           <div class="dust-index-badge">${di.icon} ${di.label} — ${di.desc}</div>
         </div>
       </div>`;
+  }
+}
+
+// ─── 초대 문구 복사 ───────────────────────────────────────────────
+async function copyInvite(runId) {
+  const run = runs.find(r => r.id === runId);
+  if (!run) return;
+  const parts = run.participants || [];
+
+  // 날씨 — '그외'는 제외, 실패해도 문구는 만든다
+  let weatherLine = '';
+  if (run.type !== 'special') {
+    try {
+      const wx = await fetchWeatherAndDust(run.date, run.time);
+      if (wx) {
+        const wc = weatherCondition(wx.weatherCode);
+        weatherLine = `${wc.icon} ${wc.label} ${wx.temp}°C`;
+      }
+    } catch (e) {}
+  }
+
+  const when = [run.date ? formatDate(run.date) : '', run.time].filter(Boolean).join(' ');
+  const lines = [
+    `${run.title || '이번 런'}에 함께 참여해요 🏃`,
+    '',
+    when ? `🗓 ${when}` : '',
+    run.location ? `📍 ${run.location}` : '',
+    run.distance ? `📏 ${run.distance}km` : '',
+    weatherLine,
+    '',
+    parts.length ? `👥 참여자 (${parts.length}): ${parts.join(', ')}` : '👥 아직 참여자가 없어요. 1등으로 참여해요!',
+  ];
+  const text = lines.filter(l => l !== null && l !== undefined).join('\n').replace(/\n{3,}/g, '\n\n').trim();
+
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text);
+    } else {
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    showToast('초대 문구를 복사했어요 📋');
+  } catch (e) {
+    showToast('복사에 실패했어요');
   }
 }
 
