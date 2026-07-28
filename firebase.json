@@ -6,6 +6,7 @@
     "rules": "storage.rules"
   },
   "hosting": {
+    "site": "paprika-run",
     "public": ".",
     "ignore": [
       "firebase.json",

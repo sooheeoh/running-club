@@ -4,31 +4,65 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="color-scheme" content="light">
-<title>🏃‍♀️ 한강런 클럽</title>
+<title>PAPRIKA RUN CLUB</title>
+<meta name="description" content="PAPRIKA RUN CLUB — 함께 달려서 오늘도 완주">
+<meta property="og:type" content="website">
+<meta property="og:title" content="PAPRIKA RUN CLUB">
+<meta property="og:description" content="함께 달려서 오늘도 완주">
+<meta property="og:image" content="https://paprika-run.web.app/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://paprika-run.web.app">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="PAPRIKA RUN CLUB">
+<meta name="twitter:description" content="함께 달려서 오늘도 완주">
+<meta name="twitter:image" content="https://paprika-run.web.app/og-image.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://www.gstatic.com">
 <link rel="preconnect" href="https://firestore.googleapis.com">
 <link rel="preconnect" href="https://identitytoolkit.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  html { color-scheme: only light; }
+  #gate-overlay {
+    position: fixed; inset: 0; z-index: 1000; display: none;
+    align-items: center; justify-content: center; padding: 24px 40px;
+    background: #ffffff;
+  }
+  #gate-overlay.show { display: flex; }
+  .gate-box { width: 100%; max-width: 320px; text-align: center; }
+  .gate-logo { width: 60%; max-width: 200px; height: auto; margin: 0 auto 40px; display: block; }
+  .gate-desc { font-size: 14px; color: #6B7280; margin-bottom: 20px; }
+  #gate-input { text-align: center; margin-bottom: 10px; }
+  .gate-error { color: #F87171; font-size: 13px; min-height: 18px; margin-bottom: 8px; }
+  html.gated body > *:not(#gate-overlay) { display: none !important; }
+  html { color-scheme: dark; }
 
   :root {
-    --primary: #2563EB;
-    --primary-light: #EFF6FF;
-    --bg: #F8F9FA;
-    --card: #FFFFFF;
-    --text: #1A1A1A;
-    --text-secondary: #6B7280;
-    --border: #E5E7EB;
-    --shadow: 0 2px 12px rgba(0,0,0,0.08);
-    --radius: 16px;
+    /* 다정한 파프리카 — 다크 (미드나잇) v1.1 */
+    --ink: #121211;            /* 가장 깊은 블록 (스탯 스트립·다크 버튼) */
+    --yellow: #E2DB14;         /* 러닝 액센트 */
+    --yellow-dark: #E2DB14;    /* 다크 위 옐로우 텍스트 */
+    --green: #00B863;          /* 그외 액센트 */
+    --green-dark: #00B863;
+    --surface: #2C2C2A;        /* 올려진 카드/버튼/입력 */
+    --muted: #6E6E66;
+
+    --primary: #F1F1EE;        /* 강조 텍스트 = 밝게 */
+    --primary-light: #2C2C2A;
+    --bg: #161615;             /* 페이지 (가장 어두운 바탕) */
+    --card: #232322;           /* 모달/기본 카드 */
+    --text: #F1F1EE;
+    --text-secondary: #A0A098;
+    --border: #34342F;
+    --shadow: 0 6px 20px rgba(0,0,0,0.4);
+    --radius: 18px;
   }
 
   body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD Gothic Neo', sans-serif;
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', sans-serif;
     background: var(--bg);
     color: var(--text);
     min-height: 100vh;
@@ -166,6 +200,15 @@
   }
   .modal-overlay.open .modal { transform: translateY(0); }
   .modal-handle { width: 36px; height: 4px; background: #E5E7EB; border-radius: 2px; margin: 12px auto 16px; }
+  #detail-modal .modal-handle { width: 48px; height: 5px; cursor: pointer; padding: 8px 0; background-clip: content-box; box-sizing: content-box; }
+  .detail-modal { position: relative; max-height: 85vh; }
+  .dt-close {
+    position: sticky; top: 10px; float: right; z-index: 20;
+    margin: 0 -4px -34px 0;
+    width: 34px; height: 34px; border-radius: 50%; border: none; cursor: pointer;
+    background: rgba(0,0,0,.45); color: #fff; font-size: 16px; line-height: 1;
+    display: flex; align-items: center; justify-content: center;
+  }
   .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 20px; }
   .modal-section { margin-bottom: 20px; }
   .form-label { font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; display: block; }
@@ -328,6 +371,8 @@
     background: #0a0a0a;
     overflow: hidden;
     padding: 7px 0;
+    margin: 10px 22px 0;
+    border-radius: 14px;
     white-space: nowrap;
     position: relative;
     /* 모바일(iOS Safari)에서 애니메이션 레이어가 떨어져 글자가 사라지는 현상 방지 */
@@ -345,7 +390,7 @@
   .neon-track {
     display: inline-flex;
     gap: 0;
-    animation: neon-scroll 38s linear infinite;
+    animation: neon-scroll 60s linear infinite;
     /* GPU 합성 레이어로 고정해 모바일에서 렌더링이 떨어지지 않게 */
     will-change: transform;
     -webkit-backface-visibility: hidden;
@@ -363,7 +408,7 @@
     text-transform: uppercase;
     letter-spacing: 0.3px;
     color: #39FF8F;
-    text-shadow: 0 0 8px #39FF8F, 0 0 18px #39FF8F, 0 0 32px #1aff70;
+    text-shadow: 0 0 7px #39FF8F, 0 0 16px #1aff70;
     padding: 0 24px;
     font-family: 'Archivo Black', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
   }
@@ -376,25 +421,253 @@
     font-family: 'Archivo Black', sans-serif;
     padding: 0 6px;
   }
+
+  /* ═══════ 다정한 파프리카 테마 (v1.0) — 오버라이드 ═══════ */
+  body { padding-bottom: 96px; }
+  .header { padding: 14px 22px 12px; }
+  .header h1 { font-size: 19px; font-weight: 800; letter-spacing: -0.01em; color: var(--ink); }
+  .brand-img { height: 26px; border-radius: 7px; display: block; }
+  .analytics-btn {
+    width: 32px; height: 32px; border-radius: 9px; background: var(--surface);
+    border: 1px solid var(--border); font-size: 15px; filter: grayscale(.2);
+  }
+
+  /* 다음 런 다크 배너 */
+  .next-banner {
+    margin: 12px 22px 0; border-radius: 14px; background: var(--ink);
+    padding: 12px 16px; display: flex; align-items: center; gap: 9px; cursor: pointer;
+  }
+  .nb-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--yellow); flex: none; }
+  .nb-label { font-size: 12.5px; font-weight: 700; color: #fff; flex: none; }
+  .nb-title { font-size: 12px; font-weight: 600; color: #B7B7B0; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .nb-dday { font-size: 12px; font-weight: 800; color: var(--yellow); flex: none; }
+  .next-banner.empty .nb-dot { background: #6E6E68; }
+
+  /* 캘린더 */
+  .calendar-wrap { padding: 16px 22px 8px; }
+  .cal-nav h2 { font-size: 18px; font-weight: 800; color: var(--ink); }
+  .cal-nav button {
+    width: 30px; height: 30px; border-radius: 8px; background: var(--surface);
+    border: 1px solid var(--border); color: var(--text-secondary); font-size: 15px;
+    display: inline-flex; align-items: center; justify-content: center; padding: 0;
+  }
+  .cal-day-label { font-weight: 700; color: var(--muted); }
+  .cal-day-label:first-child { color: var(--ink); }
+  .cal-day-label:last-child { color: var(--ink); }
+  .cal-cell { font-size: 15px; font-weight: 700; border-radius: 10px; }
+  .cal-cell.other-month { color: #D6D6D0; }
+  .cal-cell.sunday, .cal-cell.saturday { color: var(--ink); }
+  .cal-cell.today {
+    background: var(--yellow); color: var(--ink); font-weight: 800;
+    box-shadow: 0 0 0 4px rgba(226,219,20,.25);
+  }
+  .cal-cell.today.sunday, .cal-cell.today.saturday { color: var(--ink); }
+  /* 점: 러닝=옐로우, 완료=그린, 그외=그린 */
+  .run-dot { width: 5px; height: 5px; }
+  .run-dot.upcoming { background: var(--yellow); }
+  .run-dot.completed { background: var(--green); }
+  .run-dot.special   { background: var(--green); }
+  .run-dot.past      { background: #D6D6D0; }
+
+  /* 컴팩트 일정 카드 (8a) */
+  .list-wrap { padding: 4px 22px 0; }
+  .section-title { color: var(--ink); font-weight: 800; font-size: 15px; text-transform: none; letter-spacing: 0; padding: 18px 2px 10px; }
+  .run-card {
+    display: flex; align-items: center; gap: 13px; padding: 14px 16px;
+    border-radius: 18px; border: 1px solid var(--border); box-shadow: none; margin-bottom: 10px;
+  }
+  .run-card.past { opacity: .6; }
+  .rc-date { flex: none; width: 38px; text-align: center; }
+  .rc-day { font-size: 21px; font-weight: 800; line-height: 1; color: var(--ink); }
+  .rc-dow { font-size: 10px; font-weight: 700; color: var(--muted); margin-top: 3px; }
+  .rc-body { flex: 1; min-width: 0; }
+  .rc-title { font-size: 14px; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rc-sub { font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rc-pill { flex: none; font-size: 11px; font-weight: 800; padding: 6px 10px; border-radius: 999px; white-space: nowrap; }
+  /* 러닝 = 다크 카드 */
+  .run-card.ptype-run { background: var(--ink); border-color: var(--ink); }
+  .run-card.ptype-run .rc-day { color: var(--yellow); }
+  .run-card.ptype-run .rc-title { color: #fff; }
+  .run-card.ptype-run .rc-sub { color: #B7B7B0; }
+  .run-card.ptype-run .rc-pill { background: var(--yellow); color: var(--ink); }
+  /* 그외 = 라이트 카드 */
+  .run-card.ptype-special { background: var(--surface); }
+  .run-card.ptype-special .rc-day { color: var(--green); }
+  .run-card.ptype-special .rc-pill { background: var(--green); color: #fff; }
+  /* 완료 pill */
+  .rc-pill.done { background: rgba(0,171,93,.18) !important; color: var(--green-dark) !important; }
+
+  /* FAB — 다크 + 옐로우 */
+  .fab {
+    background: var(--ink); color: var(--yellow); border-radius: 16px;
+    box-shadow: 0 12px 24px -6px rgba(35,35,35,.35); font-weight: 300; bottom: 96px;
+  }
+  .fab:hover { transform: scale(1.06); }
+
+  /* 기본 버튼 = 다크 */
+  .btn-primary { background: var(--ink); color: #fff; border-radius: 14px; }
+  .form-input:focus { border-color: var(--ink); }
+  .load-more-btn { color: var(--ink); font-weight: 700; }
+
+  /* 하단 네비게이션 */
+  .bottom-nav {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 150;
+    background: rgba(255,255,255,.96); backdrop-filter: blur(8px);
+    border-top: 1px solid var(--border);
+    display: flex; padding: 8px 0 max(8px, env(safe-area-inset-bottom));
+  }
+  .bottom-nav .bn-item {
+    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
+    background: none; border: none; cursor: pointer; color: var(--muted);
+    font-size: 10.5px; font-weight: 700; font-family: inherit; padding: 4px 0;
+  }
+  .bottom-nav .bn-item.active { color: var(--ink); }
+  .bottom-nav .bn-item svg { width: 22px; height: 22px; }
+
+  /* 랭킹 화면 (8c) */
+  #view-ranking { padding: 4px 22px 0; }
+  .rank-head { padding: 12px 2px 0; }
+  .rank-title { font-size: 25px; font-weight: 800; letter-spacing: -0.01em; color: var(--ink); }
+  .rank-tabs { margin-top: 13px; background: var(--surface); border-radius: 13px; padding: 4px; display: flex; font-size: 12.5px; font-weight: 700; }
+  .rank-tab { flex: 1; text-align: center; padding: 8px 0; border: none; background: none; border-radius: 10px; color: var(--text-secondary); font-family: inherit; font-weight: 700; cursor: pointer; }
+  .rank-tab.active { background: var(--ink); color: var(--yellow); }
+  /* 포디움 */
+  .podium { display: flex; align-items: flex-end; justify-content: center; gap: 10px; padding: 18px 0 0; }
+  .podium .pcol { flex: 1; text-align: center; min-width: 0; }
+  .pav { border-radius: 50%; margin: 0 auto; display: flex; align-items: center; justify-content: center; font-weight: 800; }
+  .pcol.p1 .pav { width: 66px; height: 66px; background: var(--yellow); color: var(--ink); border: 2px solid var(--ink); font-size: 24px; }
+  .pcol.p2 .pav, .pcol.p3 .pav { width: 54px; height: 54px; background: var(--surface); border: 2px solid var(--border); color: var(--ink); font-size: 20px; }
+  .pcrown { font-size: 16px; color: var(--yellow-dark); line-height: 1; margin-bottom: 4px; }
+  .pname { font-weight: 800; font-size: 13px; margin-top: 7px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pcol.p1 .pname { font-size: 14px; }
+  .pkm { font-weight: 800; font-size: 12px; color: var(--yellow-dark); margin-top: 1px; }
+  .pbar { margin-top: 7px; border-radius: 12px 12px 0 0; display: flex; align-items: flex-start; justify-content: center; padding-top: 8px; font-weight: 800; }
+  .pcol.p1 .pbar { background: var(--yellow); color: var(--ink); height: 90px; font-size: 28px; padding-top: 10px; }
+  .pcol.p2 .pbar { background: var(--surface); color: var(--muted); height: 62px; font-size: 20px; }
+  .pcol.p3 .pbar { background: var(--surface); color: var(--muted); height: 48px; font-size: 18px; padding-top: 6px; }
+  /* 리스트 */
+  .rank-list { padding: 6px 0 0; display: flex; flex-direction: column; }
+  .rrow { display: flex; align-items: center; gap: 12px; padding: 10px 8px; border-bottom: 1px solid var(--border); }
+  .rrow .rr-rank { width: 22px; text-align: center; font-weight: 800; font-size: 14px; color: var(--muted); }
+  .rr-av { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px; color: #fff; flex: none; }
+  .rr-name { flex: 1; font-weight: 800; font-size: 14px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rr-val { text-align: right; }
+  .rr-km { font-weight: 800; font-size: 14px; }
+  .rr-km small { font-size: 10px; color: var(--muted); }
+  .rr-cnt { font-weight: 600; font-size: 10px; color: var(--muted); }
+  .rrow.me { background: #FBF9D9; border: 1px solid #ECE68F; border-radius: 14px; margin: 2px 0; }
+  .rrow.me .rr-rank, .rrow.me .rr-km, .rrow.me .rr-cnt { color: var(--yellow-dark); }
+  .me-tag { font-size: 9px; font-weight: 800; background: var(--ink); color: var(--yellow); padding: 2px 6px; border-radius: 999px; margin-left: 4px; }
+  .rank-empty { text-align: center; color: var(--text-secondary); padding: 40px 0; font-size: 14px; }
+
+  /* 상세 화면 (8b) */
+  .dt-hero { height: 90px; margin: 4px -20px 0; position: relative;
+    background-color: var(--surface);
+    background-image: repeating-linear-gradient(45deg, rgba(35,35,35,.06) 0 9px, transparent 9px 18px); }
+  .dt-hero.done { background-color: #E7F5EE; }
+  .dt-hero { overflow: hidden; }
+  .dt-hero-wm { position: absolute; right: -30px; bottom: -14px; height: 96px; width: auto; opacity: .16; pointer-events: none; }
+  .dt-pill { position: absolute; left: 20px; bottom: 14px; z-index: 1; font-size: 10px; font-weight: 800; padding: 6px 12px; border-radius: 999px; }
+  .dt-pill.open { background: var(--yellow); color: var(--ink); }
+  .dt-pill.done, .dt-pill.special { background: var(--green); color: #fff; }
+  .dt-main { padding-top: 16px; }
+  .dt-title { font-size: 22px; font-weight: 800; letter-spacing: -.01em; line-height: 1.25; }
+  .dt-sub { font-size: 12.5px; font-weight: 600; color: var(--text-secondary); margin-top: 6px; }
+  .dt-stats { display: flex; background: var(--ink); border-radius: 18px; padding: 16px 8px; margin-top: 16px; color: #fff; }
+  .dt-stat { flex: 1; text-align: center; border-right: 1px solid #3A3A34; }
+  .dt-stat:last-child { border-right: none; }
+  .dt-num { font-size: 22px; font-weight: 800; line-height: 1; }
+  .dt-num small { font-size: 12px; }
+  .dt-stat:first-child .dt-num { color: var(--yellow); }
+  .dt-lbl { font-size: 11px; font-weight: 700; color: var(--muted); margin-top: 5px; }
+  .dt-block { padding: 18px 0 0; }
+  .dt-block-t { font-size: 15px; font-weight: 800; margin-bottom: 11px; }
+  .dt-desc { background: var(--surface); border-radius: 14px; padding: 13px 15px; font-size: 13.5px; line-height: 1.5; color: #4A4A44; }
+  .dt-avs { display: flex; gap: 10px; flex-wrap: wrap; }
+  .dt-avcol { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .dt-av { position: relative; width: 46px; height: 46px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800; }
+  .dt-crown { position: absolute; bottom: -2px; right: -2px; font-size: 13px; }
+  .dt-avx { position: absolute; top: -4px; right: -4px; width: 18px; height: 18px; border-radius: 50%; border: none; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.2); color: #6E6E68; font-size: 12px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; }
+  .dt-avname { font-size: 11px; font-weight: 600; color: #4A4A44; }
+  .dt-invite { width: 46px; height: 46px; border-radius: 50%; border: 1.5px dashed var(--border); background: none; color: var(--muted); font-size: 24px; font-weight: 300; cursor: pointer; }
+  .dt-actions { display: flex; gap: 10px; margin-top: 22px; }
+  .dt-join { flex: 1; height: 52px; border-radius: 16px; border: none; background: var(--ink); color: var(--yellow); font-size: 16px; font-weight: 800; cursor: pointer; font-family: inherit; }
+  .dt-join.out { background: var(--surface); color: var(--text-secondary); }
+  .dt-edit { width: 72px; border-radius: 16px; border: 1px solid var(--border); background: var(--card); color: var(--ink); font-weight: 800; font-size: 14px; cursor: pointer; font-family: inherit; }
+
+  /* ═══════ 다크(미드나잇) 보정 — 라이트 가정 컴포넌트 오버라이드 ═══════ */
+  body { background: var(--bg); }
+  .cal-nav h2, .section-title, .rank-title, .dt-block-t, .dt-title { color: var(--text); }
+  .header { background: var(--bg); border-bottom-color: var(--border); }
+  .analytics-btn { background: var(--surface); border-color: var(--border); filter: none; }
+  .next-banner { background: var(--surface); }
+  .next-banner.empty .nb-dot { background: var(--muted); }
+  /* 캘린더 */
+  .cal-cell:hover { background: var(--surface); }
+  .cal-cell.other-month { color: #4A4A45; }
+  .cal-day-label:first-child, .cal-day-label:last-child { color: var(--text); }
+  .cal-cell.sunday, .cal-cell.saturday { color: var(--text); }
+  .cal-cell.today.sunday, .cal-cell.today.saturday { color: var(--ink); }
+  .cal-nav button { background: var(--surface); border-color: var(--border); color: var(--text-secondary); }
+  .cal-cell.today { background: var(--yellow); color: var(--ink); }
+  .cal-cell.today.sunday, .cal-cell.today.saturday { color: var(--ink); }
+  /* 카드: 다크 위에서 러닝=올려진 카드, 그외=올려진 카드(그린), 지난=아웃라인 */
+  .run-card.ptype-run { background: var(--surface); border-color: var(--surface); }
+  .run-card.ptype-special { background: var(--surface); }
+  .run-card.past { opacity: 1; background: transparent; border-color: var(--border); }
+  .run-card.past .rc-title { color: var(--text-secondary); }
+  .run-card.past .rc-day { color: var(--muted); }
+  .run-card.past .rc-pill { background: #3A3A37 !important; color: var(--muted) !important; }
+  /* FAB — 옐로우 + 다크 아이콘 */
+  .fab { background: var(--yellow); color: var(--ink); box-shadow: 0 12px 28px -6px rgba(226,219,20,.4); }
+  /* 하단 네비 */
+  .bottom-nav { background: rgba(22,22,21,.96); border-top-color: var(--border); }
+  .bottom-nav .bn-item.active { color: var(--yellow); }
+  /* 모달·폼 */
+  .modal, .nickname-modal-box { background: var(--card); }
+  .modal-handle { background: #46463F; }
+  .form-input { background: var(--surface); border-color: var(--border); color: var(--text); }
+  .form-input::placeholder { color: var(--muted); }
+  .btn-danger { background: rgba(255,73,73,.15); color: #FF6B6B; }
+  .load-more-btn { background: var(--surface); border-color: var(--border); }
+  /* 랭킹 */
+  .rank-tabs { background: var(--surface); }
+  .rrow { border-bottom-color: var(--border); }
+  .rrow.me { background: rgba(226,219,20,.12); border-color: rgba(226,219,20,.32); }
+  .rrow.me .rr-rank, .rrow.me .rr-km, .rrow.me .rr-cnt { color: var(--yellow); }
+  /* 상세 */
+  .dt-hero { background-color: var(--surface); background-image: repeating-linear-gradient(45deg, rgba(255,255,255,.05) 0 9px, transparent 9px 18px); }
+  .dt-hero.done { background-color: #16352A; }
+  .dt-desc { background: var(--surface); color: var(--text); }
+  .dt-avname { color: var(--text-secondary); }
+  .dt-avx { background: var(--card); color: var(--text-secondary); box-shadow: none; border: 1px solid var(--border); }
+  .dt-edit { background: var(--surface); border-color: var(--border); color: var(--text); }
 </style>
 </head>
 <body>
 
+<!-- 입장 암호 게이트 -->
+<div id="gate-overlay">
+  <div class="gate-box">
+    <img src="paprika-line-text-black_v3.png" alt="paprika" class="gate-logo">
+    <p class="gate-desc">입장 암호를 입력해주세요</p>
+    <input type="password" id="gate-input" class="form-input" placeholder="암호" autocomplete="off" inputmode="text" onkeydown="if(event.key==='Enter'){event.preventDefault();checkGate();}">
+    <div id="gate-error" class="gate-error"></div>
+    <button class="btn-primary" onclick="checkGate()">입장하기</button>
+  </div>
+</div>
+
 <!-- HEADER -->
 <div class="header">
   <div class="header-top">
-    <div style="display:flex; align-items:center; gap:6px;">
-      <h1>🏃‍♀️ 한강런 클럽</h1>
-      <button class="analytics-btn" onclick="openAnalytics()" title="애널리틱스" aria-label="애널리틱스">📊</button>
-      <button class="analytics-btn" onclick="openTraining()" title="훈련 처방" aria-label="훈련 처방">⏱️</button>
+    <div style="display:flex; align-items:center; gap:9px;">
+      <img src="paprika_mark.png" alt="paprika" class="brand-img">
     </div>
   </div>
 </div>
 
-<!-- NEON TICKER -->
-<div class="neon-ticker" id="neon-ticker">
-  <div class="neon-track" id="neon-track"></div>
-</div>
+<!-- NEON TICKER (전광판) -->
+<div class="neon-ticker" id="neon-ticker"><div class="neon-track" id="neon-track"></div></div>
 
 <!-- MAIN CONTENT -->
 <div id="view-calendar">
@@ -409,8 +682,32 @@
   <div class="list-wrap" id="cal-runs-list"></div>
 </div>
 
+<!-- RANKING VIEW -->
+<div id="view-ranking" style="display:none;">
+  <div class="rank-head">
+    <h2 class="rank-title">랭킹</h2>
+    <div class="rank-tabs">
+      <button class="rank-tab active" id="rtab-month" onclick="setRankTab('month')">이번 달</button>
+      <button class="rank-tab" id="rtab-all" onclick="setRankTab('all')">전체</button>
+    </div>
+  </div>
+  <div id="ranking-content"></div>
+</div>
+
 <!-- FAB -->
 <button class="fab" onclick="openAddModal()" title="새 런 추가">＋</button>
+
+<!-- BOTTOM NAV (파프리카 v1.0) -->
+<nav class="bottom-nav">
+  <button class="bn-item active" id="nav-calendar" onclick="showTab('calendar')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3.5" y="5" width="17" height="15" rx="3"/><line x1="3.5" y1="9.5" x2="20.5" y2="9.5"/><line x1="8" y1="3" x2="8" y2="6"/><line x1="16" y1="3" x2="16" y2="6"/></svg>
+    <span>캘린더</span>
+  </button>
+  <button class="bn-item" id="nav-ranking" onclick="showTab('ranking')">
+    <svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="12" width="4.5" height="8" rx="1.2"/><rect x="9.7" y="7" width="4.5" height="13" rx="1.2"/><rect x="16.5" y="14" width="4.5" height="6" rx="1.2"/></svg>
+    <span>랭킹</span>
+  </button>
+</nav>
 
 <!-- REPORT OVERLAY (제거하려면 이 블록 삭제) -->
 <div id="report-overlay" onclick="if(event.target.id==='report-overlay')closeReport()" style="position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.5);display:none;">
@@ -425,7 +722,7 @@
   <div class="modal" id="nickname-modal">
     <div class="modal-handle"></div>
     <div class="modal-title">내 닉네임이 뭐예요? 👋</div>
-    <p style="font-size:14px; color:var(--text-secondary); margin-bottom:20px;">모임을 연 사람으로 표시돼요. 한 번만 입력하면 기억해드려요.</p>
+    <p style="font-size:14px; color:var(--text-secondary); margin-bottom:20px;">참여자 목록에 표시돼요. 한 번만 입력하면 기억해드려요.</p>
     <div class="modal-section">
       <label class="form-label">닉네임</label>
       <input type="text" class="form-input" id="f-nickname" placeholder="예: 붕어빵, 달리기왕, 민수" maxlength="12">
@@ -511,7 +808,8 @@
 <!-- DETAIL MODAL -->
 <div class="modal-overlay" id="detail-modal-overlay" onclick="handleOverlayClick(event, 'detail-modal-overlay')">
   <div class="modal detail-modal" id="detail-modal">
-    <div class="modal-handle"></div>
+    <div class="modal-handle" onclick="closeModal('detail-modal-overlay')"></div>
+    <button class="dt-close" aria-label="닫기" onclick="closeModal('detail-modal-overlay')">✕</button>
     <div id="detail-content"></div>
   </div>
 </div>
@@ -599,6 +897,39 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 
 <script>
+// ─── 입장 암호 게이트 ─────────────────────────────────────────────
+const GATE_PASSCODE = 'paprika260728';
+function lockGate() {
+  document.documentElement.classList.add('gated');
+  const ov = document.getElementById('gate-overlay');
+  if (ov) ov.classList.add('show');
+  setTimeout(() => { const i = document.getElementById('gate-input'); if (i) i.focus(); }, 100);
+}
+function unlockGate() {
+  localStorage.setItem('rc_gate', GATE_PASSCODE);
+  document.documentElement.classList.remove('gated');
+  const ov = document.getElementById('gate-overlay');
+  if (ov) ov.classList.remove('show');
+}
+function checkGate() {
+  const input = document.getElementById('gate-input');
+  const err = document.getElementById('gate-error');
+  if (input.value.trim() === GATE_PASSCODE) {
+    if (err) err.textContent = '';
+    unlockGate();
+  } else {
+    if (err) err.textContent = '암호가 틀렸어요';
+    input.value = '';
+    input.focus();
+  }
+}
+// 저장된 암호가 없거나 바뀌었으면 잠금
+if (localStorage.getItem('rc_gate') !== GATE_PASSCODE) {
+  document.documentElement.classList.add('gated');
+  if (document.getElementById('gate-overlay')) lockGate();
+  else document.addEventListener('DOMContentLoaded', lockGate);
+}
+
 // ─── COMPLETED CHECK ─────────────────────────────────────────────
 function isCompleted(run) {
   const today = new Date().toISOString().slice(0,10);
@@ -656,28 +987,67 @@ function tickerPhrases() {
   return phrases.length >= 4 ? phrases : [...phrases, ...evergreen];
 }
 
-function renderTicker() {
+// 전광판(네온 티커) — tickerPhrases()를 2배 복제해 끊김 없이 흐르게 한다.
+function renderNeonTicker() {
   const track = document.getElementById('neon-track');
   if (!track) return;
   const phrases = tickerPhrases();
   const key = phrases.join('|');
-  if (key === _tickerLast) return; // 내용이 같으면 애니메이션을 다시 시작하지 않는다.
+  if (key === _tickerLast) return; // 내용이 같으면 다시 그리지 않는다(애니메이션 재시작·깜빡임 방지)
   _tickerLast = key;
 
-  const full = [...phrases, ...phrases]; // 끊김 없는 루프를 위해 복제
-  track.innerHTML = '';
-  full.forEach((p, i) => {
-    const span = document.createElement('span');
-    span.className = 'neon-phrase';
-    span.textContent = p;
-    track.appendChild(span);
-    if (i < full.length - 1) {
-      const sep = document.createElement('span');
-      sep.className = 'neon-sep';
-      sep.textContent = '✦';
-      track.appendChild(sep);
-    }
-  });
+  const unit = phrases.map(p => `<span class="neon-phrase">${esc(p)}</span>`).join('');
+  // 한 세트(half)가 화면 너비보다 확실히 넓어질 때까지 반복 → -50% 루프가 매끄럽게 이어진다.
+  const vw = window.innerWidth || 390;
+  let half = unit, reps = 1;
+  track.innerHTML = half;
+  while (track.scrollWidth < vw * 1.3 && reps < 30) { reps++; half += unit; track.innerHTML = half; }
+  track.innerHTML = half + half; // 동일한 두 세트
+
+  // 폭에 비례해 재생 시간을 정해 '속도'를 일정하고 느리게 유지한다.
+  const halfWidth = track.scrollWidth / 2;
+  if (halfWidth > 0) {
+    const SPEED = 22; // px/초 (작을수록 느림)
+    track.style.animationDuration = Math.round(halfWidth / SPEED) + 's';
+  }
+}
+
+// 창 크기가 바뀌면 폭이 달라지므로 다시 계산해 속도를 일정하게 유지한다.
+let _tickerResizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(_tickerResizeTimer);
+  _tickerResizeTimer = setTimeout(() => { _tickerLast = ''; renderNeonTicker(); }, 200);
+});
+
+let _nextRunId = null;
+function renderTicker() {
+  renderNeonTicker();
+  const el = document.getElementById('next-banner');
+  if (!el) return;
+  const today = new Date().toISOString().slice(0,10);
+  const sortKey = r => `${r.date}T${r.time || '99:99'}`;
+  const upcoming = runs
+    .filter(r => r.date > today || (r.date === today && !isCompleted(r)))
+    .sort((a,b) => sortKey(a).localeCompare(sortKey(b)));
+  const next = upcoming[0];
+  if (!next) {
+    _nextRunId = null;
+    el.classList.add('empty');
+    el.innerHTML = `<span class="nb-dot"></span><span class="nb-label">다음 런</span><span class="nb-title">예정된 런이 없어요</span>`;
+    return;
+  }
+  _nextRunId = next.id;
+  el.classList.remove('empty');
+  const diff = Math.round((new Date(next.date+'T00:00:00') - new Date(today+'T00:00:00')) / 86400000);
+  const dday = diff <= 0 ? 'D-DAY' : `D-${diff}`;
+  const label = next.type === 'special' ? '다음 일정' : '다음 런';
+  const sub = [next.title, next.time].filter(Boolean).join(' · ');
+  el.innerHTML = `<span class="nb-dot"></span><span class="nb-label">${label}</span>` +
+    `<span class="nb-title">${esc(sub)}</span><span class="nb-dday">${dday}</span>`;
+}
+function openNextRun() {
+  const r = runs.find(x => x.id === _nextRunId);
+  if (r) openDetail(r);
 }
 
 // ─── FIREBASE INIT ───────────────────────────────────────────────
@@ -732,6 +1102,7 @@ function setFormType(t) {
 }
 let existingPhotos = [];
 let myNickname = localStorage.getItem('rc_nickname') || '';
+let pendingJoinRunId = null;
 
 // ─── INIT ────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
@@ -793,6 +1164,7 @@ function renderFromCache() {
 
 // ─── NICKNAME ────────────────────────────────────────────────────
 function openAddModal() {
+  pendingJoinRunId = null; // 참여용 닉네임 요청과 섞이지 않도록 초기화
   if (!myNickname) {
     openModal('nickname-modal-overlay');
     setTimeout(() => document.getElementById('f-nickname').focus(), 350);
@@ -807,7 +1179,24 @@ function confirmNickname() {
   myNickname = val;
   localStorage.setItem('rc_nickname', val);
   closeModal('nickname-modal-overlay');
+  if (pendingJoinRunId) {
+    const runId = pendingJoinRunId;
+    pendingJoinRunId = null;
+    joinRun(runId);
+    return;
+  }
   openAddForm();
+}
+
+// 참여하기 — 닉네임이 있으면 바로 참여, 없으면 한 번만 물어보고 참여
+function joinRun(runId) {
+  if (!myNickname) {
+    pendingJoinRunId = runId;
+    openModal('nickname-modal-overlay');
+    setTimeout(() => document.getElementById('f-nickname').focus(), 350);
+    return;
+  }
+  addParticipantToRun(runId, myNickname);
 }
 
 function openAddForm() {
@@ -909,7 +1298,7 @@ function renderCalRunsList() {
   }
 
   if (upcoming.length > 0) {
-    el.insertAdjacentHTML('beforeend', `<div class="section-title">예정된 런</div>`);
+    el.insertAdjacentHTML('beforeend', `<div class="section-title">다음 런</div>`);
     upcoming.forEach(r => el.appendChild(buildRunCard(r)));
   }
 
@@ -949,42 +1338,26 @@ function buildRunCard(run) {
   const completed = isCompleted(run);
   const isPast = run.date < today || completed;
   const card = document.createElement('div');
-  card.className = `run-card ${isPast ? 'past' : 'upcoming'}`;
+  card.className = `run-card ${isPast ? 'past' : 'upcoming'} ${run.type === 'special' ? 'ptype-special' : 'ptype-run'}`;
   card.onclick = () => openDetail(run);
 
-  const completedBadge = completed ? `<span class="badge badge-completed">✅ 완료</span>` : '';
-  const specialBadge = run.type === 'special' ? `<span class="badge badge-special">그외</span>` : '';
-  const distanceBadge = run.distance ? `<span class="badge badge-distance">📏 ${run.distance}km</span>` : '';
+  const d = new Date(run.date + 'T00:00:00');
+  const day = isNaN(d) ? '' : d.getDate();
+  const dow = isNaN(d) ? '' : ['일','월','화','수','목','금','토'][d.getDay()];
+  const sub = [run.time, run.location].filter(Boolean).join(' · ');
 
-  let participantsHtml = '';
-  if (run.participants && run.participants.length > 0) {
-    const chips = run.participants.map(p => `<span class="chip">${esc(p)}</span>`).join('');
-    participantsHtml = `<div class="card-participants"><div class="participant-label">👭 참여자 ${run.participants.length}명</div><div class="participant-chips">${chips}</div></div>`;
-  }
-
-  let photosHtml = '';
-  if (run.photos && run.photos.length > 0) {
-    const thumbs = run.photos.map(url => `<img class="photo-thumb" loading="lazy" decoding="async" src="${url}" onclick="event.stopPropagation(); openLightbox('${url}')">`).join('');
-    photosHtml = `<div class="card-photos">${thumbs}</div>`;
-  }
-
-  const creatorHtml = run.createdBy ? `<div class="card-creator">👑 ${esc(run.createdBy)} 개설</div>` : '';
-  const descHtml = run.description ? `<div class="card-desc">${esc(run.description)}</div>` : '';
+  let pill = '런', pillClass = '';
+  if (run.type === 'special') pill = '그외';
+  else if (completed) { pill = '완료'; pillClass = ' done'; }
+  else if (run.distance) pill = `${run.distance}km`;
 
   card.innerHTML = `
-    <div class="card-header">
-      <div class="card-title">${esc(run.title || '제목 없음')}</div>
-      <div class="card-badges">${specialBadge}${completedBadge}${distanceBadge}</div>
+    <div class="rc-date"><div class="rc-day">${day}</div><div class="rc-dow">${dow}</div></div>
+    <div class="rc-body">
+      <div class="rc-title">${esc(run.title || '제목 없음')}</div>
+      ${sub ? `<div class="rc-sub">${esc(sub)}</div>` : ''}
     </div>
-    <div class="card-meta">
-      ${run.date ? `<span class="meta-item">📅 ${formatDate(run.date)}</span>` : ''}
-      ${run.time ? `<span class="meta-item">🕐 ${run.time}</span>` : ''}
-      ${run.location ? `<span class="meta-item">📍 ${esc(run.location)}</span>` : ''}
-    </div>
-    ${descHtml}
-    ${creatorHtml}
-    ${participantsHtml}
-    ${photosHtml}`;
+    <div class="rc-pill${pillClass}">${esc(pill)}</div>`;
 
   return card;
 }
@@ -996,85 +1369,84 @@ async function openDetailById(id) {
 }
 
 async function openDetail(run) {
+  const isSpecial = run.type === 'special';
+  const completed = isCompleted(run);
+  const today = new Date().toISOString().slice(0,10);
+  const parts = run.participants || [];
+
+  let pillTxt = '모집중', pillCls = 'open';
+  if (isSpecial) { pillTxt = '그외'; pillCls = 'special'; }
+  else if (completed) { pillTxt = '완료'; pillCls = 'done'; }
+
+  let stat3lbl = '디데이', stat3val;
+  if (completed) { stat3lbl = '상태'; stat3val = '완료'; }
+  else {
+    const diff = Math.round((new Date(run.date+'T00:00:00') - new Date(today+'T00:00:00')) / 86400000);
+    stat3val = diff <= 0 ? 'D-DAY' : `D-${diff}`;
+  }
+  const subLine = [run.date ? formatDate(run.date) : '', run.time, run.location].filter(Boolean).join(' · ');
+
   const detail = document.getElementById('detail-content');
   detail.innerHTML = `
-    <div class="detail-hero">
-      ${run.type === 'special' ? `<div style="display:inline-block;background:rgba(255,255,255,0.22);color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;margin-bottom:8px;">그외</div>` : ''}
-      <div class="detail-title">${esc(run.title || '제목 없음')}</div>
-      <div class="card-meta">
-        ${run.date ? `<span class="meta-item" style="color:rgba(255,255,255,0.9)">📅 ${formatDate(run.date)}</span>` : ''}
-        ${run.time ? `<span class="meta-item" style="color:rgba(255,255,255,0.9)">🕐 ${run.time}</span>` : ''}
+    <div class="dt-hero ${pillCls === 'done' ? 'done' : ''}"><img src="paprika_mark.png" alt="" class="dt-hero-wm"><span class="dt-pill ${pillCls}">${pillTxt}</span></div>
+    <div class="dt-main">
+      <div class="dt-title">${esc(run.title || '제목 없음')}</div>
+      <div class="dt-sub">${esc(subLine)}</div>
+      <div class="dt-stats">
+        <div class="dt-stat"><div class="dt-num">${run.distance ? run.distance : '–'}<small>${run.distance ? 'km' : ''}</small></div><div class="dt-lbl">거리</div></div>
+        <div class="dt-stat"><div class="dt-num">${parts.length}<small>명</small></div><div class="dt-lbl">참여</div></div>
+        <div class="dt-stat"><div class="dt-num">${stat3val}</div><div class="dt-lbl">${stat3lbl}</div></div>
       </div>
-      ${run.createdBy ? `<div style="margin-top:8px;font-size:12px;opacity:0.75">👑 ${esc(run.createdBy)} 개설</div>` : ''}
-    </div>
-    <div id="detail-body" style="padding: 0 0 8px"></div>`;
+      <div id="detail-body"></div>
+    </div>`;
 
   openModal('detail-modal-overlay');
-
   const body = document.getElementById('detail-body');
 
-  // Description (optional) — 눈에 잘 띄게 상단에 표시
   if (run.description) {
-    body.innerHTML += `<div class="detail-section"><div class="detail-desc">${esc(run.description)}</div></div>`;
+    body.innerHTML += `<div class="dt-block"><div class="dt-desc">${esc(run.description)}</div></div>`;
+  }
+  if (run.courseUrl) {
+    body.innerHTML += `<div class="dt-block"><a href="${esc(run.courseUrl)}" target="_blank" style="font-size:13px;font-weight:700;color:var(--ink)">🗺️ 코스 보기 →</a></div>`;
   }
 
-  // Info section
-  let infoHtml = '<div class="detail-section"><div class="detail-section-title">정보</div><div class="detail-info-grid">';
-  if (run.location) infoHtml += `<div class="detail-info-item"><span class="detail-info-icon">📍</span><span class="detail-info-text"><a href="https://map.kakao.com/link/search/${encodeURIComponent(run.location)}" target="_blank">${esc(run.location)}</a></span></div>`;
-  if (run.distance) infoHtml += `<div class="detail-info-item"><span class="detail-info-icon">📏</span><span class="detail-info-text">${run.distance}km</span></div>`;
-  if (run.courseUrl) infoHtml += `<div class="detail-info-item"><span class="detail-info-icon">🗺️</span><span class="detail-info-text"><a href="${esc(run.courseUrl)}" target="_blank">코스 보기</a></span></div>`;
-  infoHtml += '</div></div>';
-  body.innerHTML += infoHtml;
-
-  // Weather placeholder — 날씨는 비동기라, 자리만 먼저 잡아두고 나중에 채운다.
-  // (날씨 로딩이 느려도 아래 참여자/사진/수정 버튼이 즉시 보이도록)
-  body.innerHTML += `<div id="detail-weather-slot"></div>`;
-
-  // Participants
-  if (run.participants && run.participants.length > 0) {
-    const chips = run.participants.map(p =>
-      `<span class="chip">${esc(p)}<button class="chip-remove" onclick="removeParticipantFromRun('${run.id}', '${esc(p)}')">×</button></span>`
-    ).join('');
-    body.innerHTML += `
-      <div class="detail-section">
-        <div class="detail-section-title">참여자 (${run.participants.length}명)</div>
-        <div class="participant-chips">${chips}</div>
-      </div>`;
-  }
-
+  // 참여자 아바타 — 색은 그때그때 랜덤
+  const avs = parts.map(p => {
+    const s = _avPalette[Math.floor(Math.random() * _avPalette.length)];
+    const crown = p === run.createdBy ? '<span class="dt-crown">👑</span>' : '';
+    return `<div class="dt-avcol"><div class="dt-av" style="background:${s.bg};color:${s.color}">${esc(p.charAt(0))}${crown}<button class="dt-avx" onclick="removeParticipantFromRun('${run.id}','${esc(p)}')">×</button></div><span class="dt-avname">${esc(p)}</span></div>`;
+  }).join('');
   body.innerHTML += `
-    <div class="detail-section">
-      <div class="participant-input-row">
-        <input type="text" class="form-input" id="detail-participant-input" placeholder="이름 추가" style="font-size:14px;">
-        <button class="btn-add" onclick="addParticipantToRun('${run.id}')">＋</button>
+    <div class="dt-block">
+      <div class="dt-block-t">참여자 <span style="color:var(--yellow-dark)">${parts.length}</span></div>
+      <div class="dt-avs">${avs}
+        <div class="dt-avcol"><button class="dt-invite" onclick="copyInvite('${run.id}')">🔗</button><span class="dt-avname">초대</span></div>
       </div>
     </div>`;
 
+  body.innerHTML += `<div id="detail-weather-slot"></div>`;
+
   if (run.photos && run.photos.length > 0) {
     const imgs = run.photos.map(url => `<img class="gallery-img" loading="lazy" decoding="async" src="${url}" onclick="openLightbox('${url}')">`).join('');
-    body.innerHTML += `<div class="detail-section"><div class="detail-section-title">사진</div><div class="photo-gallery">${imgs}</div></div>`;
+    body.innerHTML += `<div class="dt-block"><div class="dt-block-t">사진</div><div class="photo-gallery">${imgs}</div></div>`;
   }
 
-  body.innerHTML += `<div style="margin-top:20px; display:flex; gap:10px;">
-    <button class="btn-primary" style="flex:1" onclick="closeModal('detail-modal-overlay'); openEditModal('${run.id}')">✏️ 수정하기</button>
-  </div>`;
+  const iAmIn = myNickname && parts.includes(myNickname);
+  const joinBtn = iAmIn
+    ? `<button class="dt-join out" onclick="removeParticipantFromRun('${run.id}','${esc(myNickname)}')">참여 취소</button>`
+    : `<button class="dt-join" onclick="joinRun('${run.id}')">참여하기</button>`;
+  body.innerHTML += `<div class="dt-actions">${joinBtn}<button class="dt-edit" onclick="closeModal('detail-modal-overlay');openEditModal('${run.id}')">수정</button></div>`;
 
-  // 이벤트 리스너는 모든 innerHTML 조작 이후에 붙인다 (innerHTML += 가 기존 노드를 재생성하므로).
-  document.getElementById('detail-participant-input').addEventListener('keydown', e => {
-    if (e.key === 'Enter') { e.preventDefault(); addParticipantToRun(run.id); }
-  });
-
-  // Weather + Dust — 위에서 잡아둔 슬롯에 나중에 채운다. 실패해도 나머지 UI에는 영향 없음.
-  // '그외' 활동은 날씨/대기 정보를 표시하지 않는다.
-  const wx = run.type === 'special' ? null : await fetchWeatherAndDust(run.date, run.time);
+  // 날씨 — '그외'는 표시 안 함
+  const wx = isSpecial ? null : await fetchWeatherAndDust(run.date, run.time);
   const slot = document.getElementById('detail-weather-slot');
   if (wx && slot) {
     const di = dustIndex(wx.pm25);
     const wc = weatherCondition(wx.weatherCode);
     const timeLabel = run.time ? ` (${run.time} 기준)` : '';
     slot.innerHTML = `
-      <div class="detail-section">
-        <div class="detail-section-title">날씨 & 대기환경${timeLabel}</div>
+      <div class="dt-block">
+        <div class="dt-block-t">날씨 & 대기환경${timeLabel}</div>
         <div class="weather-grid">
           <div class="weather-card"><div class="weather-icon">${wc.icon}</div><div class="weather-value" style="font-size:12px">${wc.label}</div><div class="weather-label">날씨</div></div>
           <div class="weather-card"><div class="weather-icon">🌡</div><div class="weather-value">${wx.temp}°C</div><div class="weather-label">기온</div></div>
@@ -1086,6 +1458,53 @@ async function openDetail(run) {
           <div class="dust-index-badge">${di.icon} ${di.label} — ${di.desc}</div>
         </div>
       </div>`;
+  }
+}
+
+// ─── 초대 문구 복사 ───────────────────────────────────────────────
+async function copyInvite(runId) {
+  const run = runs.find(r => r.id === runId);
+  if (!run) return;
+  const parts = run.participants || [];
+
+  // 날씨 — '그외'는 제외, 실패해도 문구는 만든다
+  let weatherLine = '';
+  if (run.type !== 'special') {
+    try {
+      const wx = await fetchWeatherAndDust(run.date, run.time);
+      if (wx) {
+        const wc = weatherCondition(wx.weatherCode);
+        weatherLine = `${wc.icon} ${wc.label} ${wx.temp}°C`;
+      }
+    } catch (e) {}
+  }
+
+  const when = [run.date ? formatDate(run.date) : '', run.time].filter(Boolean).join(' ');
+  const lines = [
+    `${run.title || '이번 런'}에 함께 참여해요 🏃`,
+    '',
+    when ? `🗓 ${when}` : '',
+    run.location ? `📍 ${run.location}` : '',
+    run.distance ? `📏 ${run.distance}km` : '',
+    weatherLine,
+    '',
+    parts.length ? `👥 참여자 (${parts.length}): ${parts.join(', ')}` : '👥 아직 참여자가 없어요. 1등으로 참여해요!',
+  ];
+  const text = lines.filter(l => l !== null && l !== undefined).join('\n').replace(/\n{3,}/g, '\n\n').trim();
+
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text);
+    } else {
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    showToast('초대 문구를 복사했어요 📋');
+  } catch (e) {
+    showToast('복사에 실패했어요');
   }
 }
 
@@ -1227,17 +1646,15 @@ function renderFormParticipants() {
   ).join('');
 }
 
-async function addParticipantToRun(runId) {
-  const input = document.getElementById('detail-participant-input');
-  const name = input.value.trim();
+async function addParticipantToRun(runId, name) {
+  name = (name || '').trim();
   if (!name) return;
   const run = runs.find(r => r.id === runId);
   if (!run) return;
   const current = run.participants || [];
-  if (current.includes(name)) { input.value = ''; showToast('이미 있는 이름이에요'); return; }
+  if (current.includes(name)) { showToast('이미 있는 이름이에요'); return; }
   try {
     await db.collection('runs').doc(runId).update({ participants: [...current, name] });
-    input.value = '';
     showToast(`${name} 추가됐어요 👋`);
     closeModal('detail-modal-overlay');
     setTimeout(() => { const updated = runs.find(r => r.id === runId); if (updated) openDetail(updated); }, 300);
@@ -1613,6 +2030,77 @@ function buildLeaderboard(filteredRuns) {
   return Object.entries(stats)
     .map(([name, s]) => ({ name, ...s }))
     .sort((a, b) => b.distance - a.distance || b.count - a.count);
+}
+
+// ─── 탭 전환 & 랭킹 화면 (파프리카 v1.0) ─────────────────────────
+let rankTab = 'month';
+function showTab(name) {
+  const isRank = name === 'ranking';
+  document.getElementById('view-calendar').style.display = isRank ? 'none' : '';
+  document.getElementById('view-ranking').style.display = isRank ? '' : 'none';
+  const nt = document.getElementById('neon-ticker'); if (nt) nt.style.display = isRank ? 'none' : '';
+  document.querySelector('.fab').style.display = isRank ? 'none' : '';
+  document.getElementById('nav-calendar').classList.toggle('active', !isRank);
+  document.getElementById('nav-ranking').classList.toggle('active', isRank);
+  if (isRank) renderRanking();
+  window.scrollTo({ top: 0 });
+}
+function setRankTab(t) {
+  rankTab = t;
+  document.getElementById('rtab-all').classList.toggle('active', t === 'all');
+  document.getElementById('rtab-month').classList.toggle('active', t === 'month');
+  renderRanking();
+}
+const _avPalette = [
+  { bg: '#232323', color: '#E2DB14' }, { bg: '#FF4949', color: '#fff' },
+  { bg: '#00AB5D', color: '#fff' }, { bg: '#6E6E68', color: '#fff' }, { bg: '#E2DB14', color: '#232323' },
+];
+function avatarStyle(name) {
+  let h = 0; for (const c of (name || '?')) h += c.charCodeAt(0);
+  return _avPalette[h % _avPalette.length];
+}
+const fmtKm = d => (d % 1 === 0 ? d : d.toFixed(1));
+
+function renderRanking() {
+  const monthStr = new Date().toISOString().slice(0, 7);
+  const completedAll = runs.filter(isCompleted);
+  const source = rankTab === 'all' ? completedAll : completedAll.filter(r => r.date && r.date.startsWith(monthStr));
+  const lb = buildLeaderboard(source);
+  const el = document.getElementById('ranking-content');
+
+  if (lb.length === 0) {
+    el.innerHTML = `<div class="rank-empty">완료된 러닝 기록이 없어요</div>`;
+    return;
+  }
+
+  // 순위별 고정 색: 1등=딩딩(옐로우), 2등=콜라(레드), 3등=방랑(그린), 4등↓=호호(잉크)
+  const rankAv = place =>
+    place === 1 ? { bg: '#E2DB14', color: '#232323' } :
+    place === 2 ? { bg: '#FF4949', color: '#fff' } :
+    place === 3 ? { bg: '#00AB5D', color: '#fff' } :
+                  { bg: '#232323', color: '#E2DB14' };
+  const av = (name, cls, place) => {
+    const s = rankAv(place);
+    return `<div class="${cls}" style="background:${s.bg};color:${s.color}">${esc((name || '?').charAt(0))}</div>`;
+  };
+  const pcol = (entry, place) => {
+    if (!entry) return `<div class="pcol p${place}"></div>`;
+    const crown = place === 1 ? `<div class="pcrown">👑</div>` : '';
+    return `<div class="pcol p${place}">${crown}${av(entry.name, 'pav', place)}` +
+      `<div class="pname">${esc(entry.name)}</div><div class="pkm">${fmtKm(entry.distance)}km</div>` +
+      `<div class="pbar">${place}</div></div>`;
+  };
+  const podium = `<div class="podium">${pcol(lb[1], 2)}${pcol(lb[0], 1)}${pcol(lb[2], 3)}</div>`;
+
+  const rows = lb.slice(3).map((e, i) => {
+    const me = myNickname && e.name === myNickname ? ' me' : '';
+    const tag = me ? `<span class="me-tag">나</span>` : '';
+    return `<div class="rrow${me}"><div class="rr-rank">${i + 4}</div>${av(e.name, 'rr-av', i + 4)}` +
+      `<div class="rr-name">${esc(e.name)}${tag}</div>` +
+      `<div class="rr-val"><div class="rr-km">${fmtKm(e.distance)}<small>km</small></div><div class="rr-cnt">${e.count}회</div></div></div>`;
+  }).join('');
+
+  el.innerHTML = podium + (rows ? `<div class="rank-list">${rows}</div>` : '');
 }
 
 function renderAnalyticsContent() {
