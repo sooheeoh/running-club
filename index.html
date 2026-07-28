@@ -683,7 +683,7 @@
   <div class="modal" id="nickname-modal">
     <div class="modal-handle"></div>
     <div class="modal-title">내 닉네임이 뭐예요? 👋</div>
-    <p style="font-size:14px; color:var(--text-secondary); margin-bottom:20px;">모임을 연 사람으로 표시돼요. 한 번만 입력하면 기억해드려요.</p>
+    <p style="font-size:14px; color:var(--text-secondary); margin-bottom:20px;">참여자 목록에 표시돼요. 한 번만 입력하면 기억해드려요.</p>
     <div class="modal-section">
       <label class="form-label">닉네임</label>
       <input type="text" class="form-input" id="f-nickname" placeholder="예: 붕어빵, 달리기왕, 민수" maxlength="12">
@@ -996,6 +996,7 @@ function setFormType(t) {
 }
 let existingPhotos = [];
 let myNickname = localStorage.getItem('rc_nickname') || '';
+let pendingJoinRunId = null;
 
 // ─── INIT ────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
@@ -1071,7 +1072,26 @@ function confirmNickname() {
   myNickname = val;
   localStorage.setItem('rc_nickname', val);
   closeModal('nickname-modal-overlay');
+  if (pendingJoinRunId) {
+    const runId = pendingJoinRunId;
+    pendingJoinRunId = null;
+    joinRun(runId);
+    return;
+  }
   openAddForm();
+}
+
+// 참여하기 — 닉네임이 있으면 바로 참여, 없으면 한 번만 물어보고 참여
+function joinRun(runId) {
+  if (!myNickname) {
+    pendingJoinRunId = runId;
+    openModal('nickname-modal-overlay');
+    setTimeout(() => document.getElementById('f-nickname').focus(), 350);
+    return;
+  }
+  const input = document.getElementById('detail-participant-input');
+  if (input) input.value = myNickname;
+  addParticipantToRun(runId);
 }
 
 function openAddForm() {
@@ -1311,9 +1331,9 @@ async function openDetail(run) {
   }
 
   const iAmIn = myNickname && parts.includes(myNickname);
-  const joinBtn = !myNickname ? '' : (iAmIn
+  const joinBtn = iAmIn
     ? `<button class="dt-join out" onclick="removeParticipantFromRun('${run.id}','${esc(myNickname)}')">참여 취소</button>`
-    : `<button class="dt-join" onclick="document.getElementById('detail-participant-input').value='${esc(myNickname)}';addParticipantToRun('${run.id}')">참여하기</button>`);
+    : `<button class="dt-join" onclick="joinRun('${run.id}')">참여하기</button>`;
   body.innerHTML += `<div class="dt-actions">${joinBtn}<button class="dt-edit" onclick="closeModal('detail-modal-overlay');openEditModal('${run.id}')">수정</button></div>`;
 
   document.getElementById('detail-participant-input').addEventListener('keydown', e => {
