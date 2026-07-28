@@ -1007,10 +1007,17 @@ function renderNeonTicker() {
   // 폭에 비례해 재생 시간을 정해 '속도'를 일정하고 느리게 유지한다.
   const halfWidth = track.scrollWidth / 2;
   if (halfWidth > 0) {
-    const SPEED = 40; // px/초 (작을수록 느림)
+    const SPEED = 22; // px/초 (작을수록 느림)
     track.style.animationDuration = Math.round(halfWidth / SPEED) + 's';
   }
 }
+
+// 창 크기가 바뀌면 폭이 달라지므로 다시 계산해 속도를 일정하게 유지한다.
+let _tickerResizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(_tickerResizeTimer);
+  _tickerResizeTimer = setTimeout(() => { _tickerLast = ''; renderNeonTicker(); }, 200);
+});
 
 let _nextRunId = null;
 function renderTicker() {
