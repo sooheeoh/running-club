@@ -1005,11 +1005,23 @@ function renderNeonTicker() {
   track.innerHTML = half + half; // 동일한 두 세트
 
   // 폭에 비례해 재생 시간을 정해 '속도'를 일정하고 느리게 유지한다.
+  // 단, 웹폰트가 준비되기 전엔 글자 폭이 좁게 측정돼 속도가 폭주하므로, 준비 전엔 멈춰 둔다.
   const halfWidth = track.scrollWidth / 2;
-  if (halfWidth > 0) {
+  if (_fontsReady && halfWidth > 0) {
     const SPEED = 22; // px/초 (작을수록 느림)
     track.style.animationDuration = Math.round(halfWidth / SPEED) + 's';
+    track.style.animationPlayState = 'running';
+  } else {
+    track.style.animationPlayState = 'paused';
   }
+}
+
+// 웹폰트 로딩이 끝나면 정확한 폭으로 다시 계산한다(첫 로딩 시 폭주 방지).
+let _fontsReady = false;
+if (document.fonts && document.fonts.ready) {
+  document.fonts.ready.then(() => { _fontsReady = true; _tickerLast = ''; renderNeonTicker(); });
+} else {
+  _fontsReady = true;
 }
 
 // 창 크기가 바뀌면 폭이 달라지므로 다시 계산해 속도를 일정하게 유지한다.
