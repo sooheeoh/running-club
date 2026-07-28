@@ -1193,9 +1193,7 @@ function joinRun(runId) {
     setTimeout(() => document.getElementById('f-nickname').focus(), 350);
     return;
   }
-  const input = document.getElementById('detail-participant-input');
-  if (input) input.value = myNickname;
-  addParticipantToRun(runId);
+  addParticipantToRun(runId, myNickname);
 }
 
 function openAddForm() {
@@ -1421,10 +1419,6 @@ async function openDetail(run) {
       <div class="dt-avs">${avs}
         <div class="dt-avcol"><button class="dt-invite" onclick="copyInvite('${run.id}')">🔗</button><span class="dt-avname">초대</span></div>
       </div>
-      <div class="participant-input-row" style="margin-top:12px">
-        <input type="text" class="form-input" id="detail-participant-input" placeholder="이름으로 추가" style="font-size:14px;">
-        <button class="btn-add" onclick="addParticipantToRun('${run.id}')">＋</button>
-      </div>
     </div>`;
 
   body.innerHTML += `<div id="detail-weather-slot"></div>`;
@@ -1439,10 +1433,6 @@ async function openDetail(run) {
     ? `<button class="dt-join out" onclick="removeParticipantFromRun('${run.id}','${esc(myNickname)}')">참여 취소</button>`
     : `<button class="dt-join" onclick="joinRun('${run.id}')">참여하기</button>`;
   body.innerHTML += `<div class="dt-actions">${joinBtn}<button class="dt-edit" onclick="closeModal('detail-modal-overlay');openEditModal('${run.id}')">수정</button></div>`;
-
-  document.getElementById('detail-participant-input').addEventListener('keydown', e => {
-    if (e.key === 'Enter') { e.preventDefault(); addParticipantToRun(run.id); }
-  });
 
   // 날씨 — '그외'는 표시 안 함
   const wx = isSpecial ? null : await fetchWeatherAndDust(run.date, run.time);
@@ -1653,17 +1643,15 @@ function renderFormParticipants() {
   ).join('');
 }
 
-async function addParticipantToRun(runId) {
-  const input = document.getElementById('detail-participant-input');
-  const name = input.value.trim();
+async function addParticipantToRun(runId, name) {
+  name = (name || '').trim();
   if (!name) return;
   const run = runs.find(r => r.id === runId);
   if (!run) return;
   const current = run.participants || [];
-  if (current.includes(name)) { input.value = ''; showToast('이미 있는 이름이에요'); return; }
+  if (current.includes(name)) { showToast('이미 있는 이름이에요'); return; }
   try {
     await db.collection('runs').doc(runId).update({ participants: [...current, name] });
-    input.value = '';
     showToast(`${name} 추가됐어요 👋`);
     closeModal('detail-modal-overlay');
     setTimeout(() => { const updated = runs.find(r => r.id === runId); if (updated) openDetail(updated); }, 300);
