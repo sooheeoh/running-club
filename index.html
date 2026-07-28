@@ -5,6 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="color-scheme" content="light">
 <title>🫑 파프리카 런클럽</title>
+<meta name="description" content="파프리카 런클럽 — 함께 달려요 🏃">
+<meta property="og:type" content="website">
+<meta property="og:title" content="🫑 파프리카 런클럽">
+<meta property="og:description" content="함께 달려요 🏃 다음 런에 참여해보세요!">
+<meta property="og:image" content="https://running-club-8da37.web.app/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://running-club-8da37.web.app">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="🫑 파프리카 런클럽">
+<meta name="twitter:description" content="함께 달려요 🏃 다음 런에 참여해보세요!">
+<meta name="twitter:image" content="https://running-club-8da37.web.app/og-image.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://www.gstatic.com">
@@ -14,6 +26,19 @@
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  #gate-overlay {
+    position: fixed; inset: 0; z-index: 1000; display: none;
+    align-items: center; justify-content: center; padding: 24px;
+    background: #12120E;
+  }
+  #gate-overlay.show { display: flex; }
+  .gate-box { width: 100%; max-width: 340px; text-align: center; }
+  .gate-logo { height: 64px; width: auto; margin-bottom: 18px; }
+  .gate-title { font-size: 20px; font-weight: 800; color: #fff; margin-bottom: 6px; }
+  .gate-desc { font-size: 14px; color: #9CA3AF; margin-bottom: 20px; }
+  #gate-input { text-align: center; margin-bottom: 10px; }
+  .gate-error { color: #F87171; font-size: 13px; min-height: 18px; margin-bottom: 8px; }
+  html.gated body > *:not(#gate-overlay) { display: none !important; }
   html { color-scheme: dark; }
 
   :root {
@@ -620,6 +645,18 @@
 </head>
 <body>
 
+<!-- 입장 암호 게이트 -->
+<div id="gate-overlay">
+  <div class="gate-box">
+    <img src="paprika_mark.png" alt="paprika" class="gate-logo">
+    <div class="gate-title">파프리카 런클럽 🫑</div>
+    <p class="gate-desc">입장 암호를 입력해주세요</p>
+    <input type="password" id="gate-input" class="form-input" placeholder="암호" autocomplete="off" inputmode="text" onkeydown="if(event.key==='Enter'){event.preventDefault();checkGate();}">
+    <div id="gate-error" class="gate-error"></div>
+    <button class="btn-primary" onclick="checkGate()">입장하기</button>
+  </div>
+</div>
+
 <!-- HEADER -->
 <div class="header">
   <div class="header-top">
@@ -867,6 +904,39 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 
 <script>
+// ─── 입장 암호 게이트 ─────────────────────────────────────────────
+const GATE_PASSCODE = 'paprika';
+function lockGate() {
+  document.documentElement.classList.add('gated');
+  const ov = document.getElementById('gate-overlay');
+  if (ov) ov.classList.add('show');
+  setTimeout(() => { const i = document.getElementById('gate-input'); if (i) i.focus(); }, 100);
+}
+function unlockGate() {
+  localStorage.setItem('rc_gate', GATE_PASSCODE);
+  document.documentElement.classList.remove('gated');
+  const ov = document.getElementById('gate-overlay');
+  if (ov) ov.classList.remove('show');
+}
+function checkGate() {
+  const input = document.getElementById('gate-input');
+  const err = document.getElementById('gate-error');
+  if (input.value.trim() === GATE_PASSCODE) {
+    if (err) err.textContent = '';
+    unlockGate();
+  } else {
+    if (err) err.textContent = '암호가 틀렸어요';
+    input.value = '';
+    input.focus();
+  }
+}
+// 저장된 암호가 없거나 바뀌었으면 잠금
+if (localStorage.getItem('rc_gate') !== GATE_PASSCODE) {
+  document.documentElement.classList.add('gated');
+  if (document.getElementById('gate-overlay')) lockGate();
+  else document.addEventListener('DOMContentLoaded', lockGate);
+}
+
 // ─── COMPLETED CHECK ─────────────────────────────────────────────
 function isCompleted(run) {
   const today = new Date().toISOString().slice(0,10);
