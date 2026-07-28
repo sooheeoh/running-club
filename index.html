@@ -28,14 +28,13 @@
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   #gate-overlay {
     position: fixed; inset: 0; z-index: 1000; display: none;
-    align-items: center; justify-content: center; padding: 24px;
-    background: #12120E;
+    align-items: center; justify-content: center; padding: 24px 40px;
+    background: #ffffff;
   }
   #gate-overlay.show { display: flex; }
-  .gate-box { width: 100%; max-width: 340px; text-align: center; }
-  .gate-logo { height: 64px; width: auto; margin-bottom: 18px; }
-  .gate-title { font-size: 20px; font-weight: 800; color: #fff; margin-bottom: 6px; }
-  .gate-desc { font-size: 14px; color: #9CA3AF; margin-bottom: 20px; }
+  .gate-box { width: 100%; max-width: 320px; text-align: center; }
+  .gate-logo { width: 60%; max-width: 200px; height: auto; margin: 0 auto 40px; display: block; }
+  .gate-desc { font-size: 14px; color: #6B7280; margin-bottom: 20px; }
   #gate-input { text-align: center; margin-bottom: 10px; }
   .gate-error { color: #F87171; font-size: 13px; min-height: 18px; margin-bottom: 8px; }
   html.gated body > *:not(#gate-overlay) { display: none !important; }
@@ -648,8 +647,7 @@
 <!-- 입장 암호 게이트 -->
 <div id="gate-overlay">
   <div class="gate-box">
-    <img src="paprika_mark.png" alt="paprika" class="gate-logo">
-    <div class="gate-title">파프리카 런클럽 🫑</div>
+    <img src="paprika-line-text-black_v3.png" alt="paprika" class="gate-logo">
     <p class="gate-desc">입장 암호를 입력해주세요</p>
     <input type="password" id="gate-input" class="form-input" placeholder="암호" autocomplete="off" inputmode="text" onkeydown="if(event.key==='Enter'){event.preventDefault();checkGate();}">
     <div id="gate-error" class="gate-error"></div>
@@ -905,7 +903,7 @@
 
 <script>
 // ─── 입장 암호 게이트 ─────────────────────────────────────────────
-const GATE_PASSCODE = 'paprika';
+const GATE_PASSCODE = 'paprika260728';
 function lockGate() {
   document.documentElement.classList.add('gated');
   const ov = document.getElementById('gate-overlay');
