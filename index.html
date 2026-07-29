@@ -459,10 +459,10 @@
   .cal-cell.sunday, .cal-cell.saturday { color: var(--ink); }
   .cal-num {
     display: inline-flex; align-items: center; justify-content: center;
-    width: 26px; height: 26px; border-radius: 50%; line-height: 1;
+    width: 30px; height: 30px; border-radius: 50%; line-height: 1; text-align: center;
   }
   .cal-cell.today { background: none; box-shadow: none; font-weight: 800; }
-  .cal-cell.today .cal-num { background: var(--yellow); color: var(--ink); }
+  .cal-cell.today .cal-num { background: rgba(226,219,20,.85); color: var(--ink); }
   .cal-cell.today.sunday .cal-num, .cal-cell.today.saturday .cal-num { color: var(--ink); }
   /* 점: 러닝=옐로우, 완료=그린, 그외=그린 */
   .run-dot { width: 5px; height: 5px; }
@@ -503,9 +503,9 @@
   .fab {
     background: var(--ink); color: var(--yellow); border-radius: 16px;
     box-shadow: 0 12px 24px -6px rgba(35,35,35,.35); font-weight: 300;
-    left: 50%; right: auto; transform: translateX(-50%); bottom: 88px;
+    right: 18px; bottom: 108px;
   }
-  .fab:hover { transform: translateX(-50%) scale(1.06); }
+  .fab:hover { transform: scale(1.06); }
 
   /* 기본 버튼 = 다크 */
   .btn-primary { background: var(--ink); color: #fff; border-radius: 14px; }
@@ -613,7 +613,7 @@
   .cal-cell.today.sunday, .cal-cell.today.saturday { color: var(--ink); }
   .cal-nav button { background: var(--surface); border-color: var(--border); color: var(--text-secondary); }
   .cal-cell.today { background: none; }
-  .cal-cell.today .cal-num { background: var(--yellow); color: var(--ink); }
+  .cal-cell.today .cal-num { background: rgba(226,219,20,.85); color: var(--ink); }
   .cal-cell.today.sunday .cal-num, .cal-cell.today.saturday .cal-num { color: var(--ink); }
   /* 카드: 다크 위에서 러닝=올려진 카드, 그외=올려진 카드(그린), 지난=아웃라인 */
   .run-card.ptype-run { background: var(--surface); border-color: var(--surface); }
