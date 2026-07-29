@@ -462,8 +462,11 @@
     width: 34px; height: 34px; border-radius: 50%; line-height: 1; text-align: center;
   }
   .cal-cell.today { background: none; box-shadow: none; font-weight: 800; }
-  .cal-cell.today .cal-num { background: rgba(226,219,20,.85); color: var(--ink); }
-  .cal-cell.today.sunday .cal-num, .cal-cell.today.saturday .cal-num { color: var(--ink); }
+  .cal-cell.today .cal-num {
+    background: none; width: auto; height: auto; border-radius: 0;
+    color: var(--yellow); border-bottom: 3px solid rgba(226,219,20,.9); padding-bottom: 2px;
+  }
+  .cal-cell.today.sunday .cal-num, .cal-cell.today.saturday .cal-num { color: var(--yellow); }
   /* 점: 러닝=옐로우, 완료=그린, 그외=그린 */
   .run-dot { width: 5px; height: 5px; }
   .run-dot.upcoming { background: var(--yellow); }
@@ -613,8 +616,11 @@
   .cal-cell.today.sunday, .cal-cell.today.saturday { color: var(--ink); }
   .cal-nav button { background: var(--surface); border-color: var(--border); color: var(--text-secondary); }
   .cal-cell.today { background: none; }
-  .cal-cell.today .cal-num { background: rgba(226,219,20,.85); color: var(--ink); }
-  .cal-cell.today.sunday .cal-num, .cal-cell.today.saturday .cal-num { color: var(--ink); }
+  .cal-cell.today .cal-num {
+    background: none; width: auto; height: auto; border-radius: 0;
+    color: var(--yellow); border-bottom: 3px solid rgba(226,219,20,.9); padding-bottom: 2px;
+  }
+  .cal-cell.today.sunday .cal-num, .cal-cell.today.saturday .cal-num { color: var(--yellow); }
   /* 카드: 다크 위에서 러닝=올려진 카드, 그외=올려진 카드(그린), 지난=아웃라인 */
   .run-card.ptype-run { background: var(--surface); border-color: var(--surface); }
   .run-card.ptype-special { background: var(--surface); }
