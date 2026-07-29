@@ -457,11 +457,13 @@
   .cal-cell { font-size: 15px; font-weight: 700; border-radius: 10px; }
   .cal-cell.other-month { color: #D6D6D0; }
   .cal-cell.sunday, .cal-cell.saturday { color: var(--ink); }
-  .cal-cell.today {
-    background: var(--yellow); color: var(--ink); font-weight: 800;
-    box-shadow: 0 0 0 4px rgba(226,219,20,.25);
+  .cal-num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; border-radius: 50%; line-height: 1;
   }
-  .cal-cell.today.sunday, .cal-cell.today.saturday { color: var(--ink); }
+  .cal-cell.today { background: none; box-shadow: none; font-weight: 800; }
+  .cal-cell.today .cal-num { background: var(--yellow); color: var(--ink); }
+  .cal-cell.today.sunday .cal-num, .cal-cell.today.saturday .cal-num { color: var(--ink); }
   /* 점: 러닝=옐로우, 완료=그린, 그외=그린 */
   .run-dot { width: 5px; height: 5px; }
   .run-dot.upcoming { background: var(--yellow); }
@@ -500,9 +502,10 @@
   /* FAB — 다크 + 옐로우 */
   .fab {
     background: var(--ink); color: var(--yellow); border-radius: 16px;
-    box-shadow: 0 12px 24px -6px rgba(35,35,35,.35); font-weight: 300; bottom: 96px;
+    box-shadow: 0 12px 24px -6px rgba(35,35,35,.35); font-weight: 300;
+    left: 50%; right: auto; transform: translateX(-50%); bottom: 88px;
   }
-  .fab:hover { transform: scale(1.06); }
+  .fab:hover { transform: translateX(-50%) scale(1.06); }
 
   /* 기본 버튼 = 다크 */
   .btn-primary { background: var(--ink); color: #fff; border-radius: 14px; }
@@ -609,8 +612,9 @@
   .cal-cell.sunday, .cal-cell.saturday { color: var(--text); }
   .cal-cell.today.sunday, .cal-cell.today.saturday { color: var(--ink); }
   .cal-nav button { background: var(--surface); border-color: var(--border); color: var(--text-secondary); }
-  .cal-cell.today { background: var(--yellow); color: var(--ink); }
-  .cal-cell.today.sunday, .cal-cell.today.saturday { color: var(--ink); }
+  .cal-cell.today { background: none; }
+  .cal-cell.today .cal-num { background: var(--yellow); color: var(--ink); }
+  .cal-cell.today.sunday .cal-num, .cal-cell.today.saturday .cal-num { color: var(--ink); }
   /* 카드: 다크 위에서 러닝=올려진 카드, 그외=올려진 카드(그린), 지난=아웃라인 */
   .run-card.ptype-run { background: var(--surface); border-color: var(--surface); }
   .run-card.ptype-special { background: var(--surface); }
@@ -1281,7 +1285,7 @@ function renderCalendar() {
       const cls = r.type === 'special' ? 'special' : comp ? 'completed' : isPast ? 'past' : 'upcoming';
       return `<div class="run-dot ${cls}" title="${r.type === 'special' ? '특별 세션' : comp ? '완료' : ''}"></div>`;
     }).join('');
-    grid.innerHTML += `<div class="${cls}" onclick="filterCalendarByDate('${dateStr}')">${d}<div class="run-dots">${dots}</div></div>`;
+    grid.innerHTML += `<div class="${cls}" onclick="filterCalendarByDate('${dateStr}')"><span class="cal-num">${d}</span><div class="run-dots">${dots}</div></div>`;
   }
 
   const totalCells = firstDay + lastDate;
