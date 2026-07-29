@@ -465,8 +465,9 @@
   }
   .cal-cell.today { background: none; box-shadow: none; font-weight: 800; }
   .cal-cell.today .cal-num {
-    background: none; width: auto; height: auto; border-radius: 0;
-    color: var(--yellow); border-bottom: 3px solid rgba(226,219,20,.9); padding-bottom: 2px;
+    background: none; color: var(--yellow);
+    text-decoration: underline; text-decoration-color: rgba(226,219,20,.9);
+    text-decoration-thickness: 3px; text-underline-offset: 4px;
   }
   .cal-cell.today.sunday .cal-num, .cal-cell.today.saturday .cal-num { color: var(--yellow); }
   /* 점: 러닝=옐로우, 완료=그린, 그외=그린 */
@@ -619,8 +620,9 @@
   .cal-nav button { background: var(--surface); border-color: var(--border); color: var(--text-secondary); }
   .cal-cell.today { background: none; }
   .cal-cell.today .cal-num {
-    background: none; width: auto; height: auto; border-radius: 0;
-    color: var(--yellow); border-bottom: 3px solid rgba(226,219,20,.9); padding-bottom: 2px;
+    background: none; color: var(--yellow);
+    text-decoration: underline; text-decoration-color: rgba(226,219,20,.9);
+    text-decoration-thickness: 3px; text-underline-offset: 4px;
   }
   .cal-cell.today.sunday .cal-num, .cal-cell.today.saturday .cal-num { color: var(--yellow); }
   /* 카드: 다크 위에서 러닝=올려진 카드, 그외=올려진 카드(그린), 지난=아웃라인 */
