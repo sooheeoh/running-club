@@ -467,7 +467,7 @@
   .cal-cell.today .cal-num {
     background: none; color: var(--yellow);
     text-decoration: underline; text-decoration-color: rgba(226,219,20,.9);
-    text-decoration-thickness: 3px; text-underline-offset: 4px;
+    text-decoration-thickness: 2px; text-underline-offset: 4px;
   }
   .cal-cell.today.sunday .cal-num, .cal-cell.today.saturday .cal-num { color: var(--yellow); }
   /* 점: 러닝=옐로우, 완료=그린, 그외=그린 */
@@ -622,7 +622,7 @@
   .cal-cell.today .cal-num {
     background: none; color: var(--yellow);
     text-decoration: underline; text-decoration-color: rgba(226,219,20,.9);
-    text-decoration-thickness: 3px; text-underline-offset: 4px;
+    text-decoration-thickness: 2px; text-underline-offset: 4px;
   }
   .cal-cell.today.sunday .cal-num, .cal-cell.today.saturday .cal-num { color: var(--yellow); }
   /* 카드: 다크 위에서 러닝=올려진 카드, 그외=올려진 카드(그린), 지난=아웃라인 */
@@ -2055,7 +2055,7 @@ function buildLeaderboard(filteredRuns) {
   });
   return Object.entries(stats)
     .map(([name, s]) => ({ name, ...s }))
-    .sort((a, b) => b.distance - a.distance || b.count - a.count);
+    .sort((a, b) => b.count - a.count || b.distance - a.distance);
 }
 
 // ─── 탭 전환 & 랭킹 화면 (파프리카 v1.0) ─────────────────────────
@@ -2113,7 +2113,7 @@ function renderRanking() {
     if (!entry) return `<div class="pcol p${place}"></div>`;
     const crown = place === 1 ? `<div class="pcrown">👑</div>` : '';
     return `<div class="pcol p${place}">${crown}${av(entry.name, 'pav', place)}` +
-      `<div class="pname">${esc(entry.name)}</div><div class="pkm">${fmtKm(entry.distance)}km</div>` +
+      `<div class="pname">${esc(entry.name)}</div><div class="pkm">${entry.count}회</div>` +
       `<div class="pbar">${place}</div></div>`;
   };
   const podium = `<div class="podium">${pcol(lb[1], 2)}${pcol(lb[0], 1)}${pcol(lb[2], 3)}</div>`;
@@ -2123,7 +2123,7 @@ function renderRanking() {
     const tag = me ? `<span class="me-tag">나</span>` : '';
     return `<div class="rrow${me}"><div class="rr-rank">${i + 4}</div>${av(e.name, 'rr-av', i + 4)}` +
       `<div class="rr-name">${esc(e.name)}${tag}</div>` +
-      `<div class="rr-val"><div class="rr-km">${fmtKm(e.distance)}<small>km</small></div><div class="rr-cnt">${e.count}회</div></div></div>`;
+      `<div class="rr-val"><div class="rr-km">${e.count}<small>회</small></div><div class="rr-cnt">${fmtKm(e.distance)}km</div></div></div>`;
   }).join('');
 
   el.innerHTML = podium + (rows ? `<div class="rank-list">${rows}</div>` : '');
