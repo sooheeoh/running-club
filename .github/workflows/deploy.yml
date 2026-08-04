@@ -1,0 +1,25 @@
+name: Deploy to Firebase Hosting
+
+# main에 머지(푸시)되면 자동으로 Firebase Hosting(paprika-run 사이트)에 배포한다.
+# 필요 시크릿: FIREBASE_SERVICE_ACCOUNT (Firebase 콘솔에서 발급한 서비스 계정 JSON 전체)
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+      - name: Write service account key
+        run: printf '%s' '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > "$HOME/sa.json"
+      - name: Deploy to Hosting
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: /home/runner/sa.json
+        run: firebase deploy --only hosting --project running-club-8da37 --non-interactive
