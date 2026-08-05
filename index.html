@@ -533,6 +533,25 @@
   .bottom-nav .bn-item.active { color: var(--ink); }
   .bottom-nav .bn-item svg { width: 22px; height: 22px; }
 
+  /* MY 화면 (개인 대시보드) */
+  #view-my { padding: 4px 22px 40px; }
+  .my-head { padding: 12px 2px 0; }
+  .my-title { font-size: 25px; font-weight: 800; letter-spacing: -0.01em; color: var(--ink); }
+  .my-profile { display: flex; align-items: center; gap: 14px; margin-top: 16px; }
+  .my-av { width: 60px; height: 60px; border-radius: 50%; flex: none; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 800; }
+  .my-id { flex: 1; min-width: 0; }
+  .my-name { font-size: 20px; font-weight: 800; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .my-sub { font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-top: 3px; }
+  .my-edit { flex: none; background: var(--surface); color: var(--text-secondary); border: none; border-radius: 999px; padding: 8px 13px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; }
+  .my-stats { display: flex; gap: 10px; margin-top: 18px; }
+  .my-stat { flex: 1; background: var(--surface); border-radius: 16px; padding: 16px 10px; text-align: center; }
+  .my-stat-num { font-size: 24px; font-weight: 800; color: var(--yellow); line-height: 1; }
+  .my-stat-lbl { font-size: 11px; font-weight: 700; color: var(--text-secondary); margin-top: 6px; }
+  .my-empty { text-align: center; padding: 60px 20px; }
+  .my-empty-t { font-size: 16px; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
+  .my-empty-d { font-size: 13px; color: var(--text-secondary); margin-bottom: 20px; }
+  .my-empty .btn-primary { max-width: 220px; margin: 0 auto; }
+
   /* 랭킹 화면 (8c) */
   #view-ranking { padding: 4px 22px 0; }
   .rank-head { padding: 12px 2px 0; }
@@ -607,7 +626,7 @@
 
   /* ═══════ 다크(미드나잇) 보정 — 라이트 가정 컴포넌트 오버라이드 ═══════ */
   body { background: var(--bg); }
-  .cal-nav h2, .section-title, .rank-title, .dt-block-t, .dt-title { color: var(--text); }
+  .cal-nav h2, .section-title, .rank-title, .my-title, .my-name, .dt-block-t, .dt-title { color: var(--text); }
   .header { background: var(--bg); border-bottom-color: var(--border); }
   .analytics-btn { background: var(--surface); border-color: var(--border); filter: none; }
   .next-banner { background: var(--surface); }
@@ -709,6 +728,12 @@
   <div id="ranking-content"></div>
 </div>
 
+<!-- MY VIEW (개인 대시보드) -->
+<div id="view-my" style="display:none;">
+  <div class="my-head"><h2 class="my-title">MY</h2></div>
+  <div id="my-content"></div>
+</div>
+
 <!-- FAB -->
 <button class="fab" onclick="openAddModal()" title="새 런 추가">＋</button>
 
@@ -721,6 +746,10 @@
   <button class="bn-item" id="nav-ranking" onclick="showTab('ranking')">
     <svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="12" width="4.5" height="8" rx="1.2"/><rect x="9.7" y="7" width="4.5" height="13" rx="1.2"/><rect x="16.5" y="14" width="4.5" height="6" rx="1.2"/></svg>
     <span>랭킹</span>
+  </button>
+  <button class="bn-item" id="nav-my" onclick="showTab('my')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="8" r="3.8"/><path d="M4.5 20.5c0-4 3.6-6.2 7.5-6.2s7.5 2.2 7.5 6.2"/></svg>
+    <span>MY</span>
   </button>
 </nav>
 
@@ -1130,6 +1159,7 @@ function setFormType(t) {
 let existingPhotos = [];
 let myNickname = localStorage.getItem('rc_nickname') || '';
 let pendingJoinRunId = null;
+let pendingNicknameEdit = false; // MY에서 닉네임 변경 중이면 확인 후 폼 대신 MY 갱신
 
 // ─── INIT ────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
@@ -1206,6 +1236,12 @@ function confirmNickname() {
   myNickname = val;
   localStorage.setItem('rc_nickname', val);
   closeModal('nickname-modal-overlay');
+  if (pendingNicknameEdit) {
+    pendingNicknameEdit = false;
+    renderAll();      // 닉네임이 바뀌면 내 런 매칭도 갱신
+    renderMy();
+    return;
+  }
   if (pendingJoinRunId) {
     const runId = pendingJoinRunId;
     pendingJoinRunId = null;
@@ -1213,6 +1249,16 @@ function confirmNickname() {
     return;
   }
   openAddForm();
+}
+
+// MY 화면에서 닉네임 정하기/변경 (확인 시 폼을 열지 않고 MY로 복귀)
+function editNickname() {
+  pendingNicknameEdit = true;
+  pendingJoinRunId = null;
+  const inp = document.getElementById('f-nickname');
+  if (inp) inp.value = myNickname || '';
+  openModal('nickname-modal-overlay');
+  setTimeout(() => { const i = document.getElementById('f-nickname'); if (i) i.focus(); }, 350);
 }
 
 // 참여하기 — 닉네임이 있으면 바로 참여, 없으면 한 번만 물어보고 참여
@@ -1255,6 +1301,8 @@ function openAddForm() {
 function renderAll() {
   renderTicker(); // 런 데이터가 바뀌면 전광판 문장도 갱신
   renderCalendar();
+  if (_activeTab === 'ranking') renderRanking();
+  if (_activeTab === 'my') renderMy();
 }
 
 // ─── CALENDAR ────────────────────────────────────────────────────
@@ -2061,15 +2109,21 @@ function buildLeaderboard(filteredRuns) {
 
 // ─── 탭 전환 & 랭킹 화면 (파프리카 v1.0) ─────────────────────────
 let rankTab = 'month';
+let _activeTab = 'calendar';
 function showTab(name) {
-  const isRank = name === 'ranking';
-  document.getElementById('view-calendar').style.display = isRank ? 'none' : '';
-  document.getElementById('view-ranking').style.display = isRank ? '' : 'none';
-  const nt = document.getElementById('neon-ticker'); if (nt) nt.style.display = isRank ? 'none' : '';
-  document.querySelector('.fab').style.display = isRank ? 'none' : '';
-  document.getElementById('nav-calendar').classList.toggle('active', !isRank);
-  document.getElementById('nav-ranking').classList.toggle('active', isRank);
-  if (isRank) renderRanking();
+  _activeTab = name;
+  const views = { calendar: 'view-calendar', ranking: 'view-ranking', my: 'view-my' };
+  Object.entries(views).forEach(([k, id]) => {
+    const v = document.getElementById(id); if (v) v.style.display = (k === name) ? '' : 'none';
+  });
+  const isCal = name === 'calendar';
+  const nt = document.getElementById('neon-ticker'); if (nt) nt.style.display = isCal ? '' : 'none';
+  document.querySelector('.fab').style.display = isCal ? '' : 'none';
+  document.getElementById('nav-calendar').classList.toggle('active', name === 'calendar');
+  document.getElementById('nav-ranking').classList.toggle('active', name === 'ranking');
+  document.getElementById('nav-my').classList.toggle('active', name === 'my');
+  if (name === 'ranking') renderRanking();
+  if (name === 'my') renderMy();
   window.scrollTo({ top: 0 });
 }
 function setRankTab(t) {
@@ -2087,6 +2141,60 @@ function avatarStyle(name) {
   return _avPalette[h % _avPalette.length];
 }
 const fmtKm = d => (d % 1 === 0 ? d : d.toFixed(1));
+
+// ─── MY 개인 대시보드 ────────────────────────────────────────────
+function renderMy() {
+  const el = document.getElementById('my-content');
+  if (!el) return;
+
+  if (!myNickname) {
+    el.innerHTML = `
+      <div class="my-empty">
+        <div class="my-empty-t">닉네임을 정하면 내 활동이 모여요 🫑</div>
+        <div class="my-empty-d">참여·개설한 런이 여기에 쌓여요.</div>
+        <button class="btn-primary" onclick="editNickname()">닉네임 정하기</button>
+      </div>`;
+    return;
+  }
+
+  const today = new Date().toISOString().slice(0, 10);
+  const sortKey = r => `${r.date}T${r.time || '99:99'}`;
+  const mine = runs.filter(r => (r.participants || []).includes(myNickname));
+  const myUpcoming = mine
+    .filter(r => r.date > today || (r.date === today && !isCompleted(r)))
+    .sort((a, b) => sortKey(a).localeCompare(sortKey(b)));
+  const myDone = mine.filter(isCompleted).sort((a, b) => b.date.localeCompare(a.date));
+  const myHosted = runs.filter(r => r.createdBy === myNickname).sort((a, b) => b.date.localeCompare(a.date));
+
+  let subText = '함께 달릴 준비 완료 🏃';
+  if (myUpcoming.length) {
+    const diff = Math.round((new Date(myUpcoming[0].date + 'T00:00:00') - new Date(today + 'T00:00:00')) / 86400000);
+    subText = diff <= 0 ? '오늘 런이 있어요!' : `다음 런 D-${diff}`;
+  }
+  const s = avatarStyle(myNickname);
+
+  el.innerHTML = `
+    <div class="my-profile">
+      <div class="my-av" style="background:${s.bg};color:${s.color}">${esc(myNickname.charAt(0))}</div>
+      <div class="my-id">
+        <div class="my-name">${esc(myNickname)}</div>
+        <div class="my-sub">${subText}</div>
+      </div>
+      <button class="my-edit" onclick="editNickname()">닉네임 변경</button>
+    </div>
+    <div class="my-stats">
+      <div class="my-stat"><div class="my-stat-num">${myDone.length}</div><div class="my-stat-lbl">함께한 런</div></div>
+      <div class="my-stat"><div class="my-stat-num">${myUpcoming.length}</div><div class="my-stat-lbl">다가오는 런</div></div>
+      <div class="my-stat"><div class="my-stat-num">${myHosted.length}</div><div class="my-stat-lbl">내가 개설</div></div>
+    </div>
+    <div class="section-title">다가오는 내 런</div><div id="my-upcoming"></div>
+    <div class="section-title">완료한 런</div><div id="my-done"></div>
+    <div class="section-title">내가 개설한 런</div><div id="my-hosted"></div>`;
+
+  renderRunsInto('my-upcoming', myUpcoming, '다가오는 런이 없어요');
+  renderRunsInto('my-done', myDone, '아직 완료한 런이 없어요');
+  renderRunsInto('my-hosted', myHosted, '개설한 런이 없어요');
+}
 
 function renderRanking() {
   const monthStr = new Date().toISOString().slice(0, 7);
