@@ -554,6 +554,11 @@
 
   /* 랭킹 화면 (8c) */
   #view-ranking { padding: 4px 22px 0; }
+  .rank-summary { display: flex; gap: 10px; margin: 14px 0 2px; }
+  .rank-sum-item { flex: 1; background: var(--surface); border-radius: 14px; padding: 13px 10px; text-align: center; }
+  .rank-sum-num { font-size: 21px; font-weight: 800; color: var(--yellow); line-height: 1; }
+  .rank-sum-num small { font-size: 12px; font-weight: 700; margin-left: 1px; }
+  .rank-sum-lbl { font-size: 11px; font-weight: 700; color: var(--text-secondary); margin-top: 6px; }
   .rank-head { padding: 12px 2px 0; }
   .rank-title { font-size: 25px; font-weight: 800; letter-spacing: -0.01em; color: var(--ink); }
   .rank-tabs { margin-top: 13px; background: var(--surface); border-radius: 13px; padding: 4px; display: flex; font-size: 12.5px; font-weight: 700; }
@@ -2203,8 +2208,19 @@ function renderRanking() {
   const lb = buildLeaderboard(source);
   const el = document.getElementById('ranking-content');
 
+  // 기간 요약: 완료한 런(그외 제외) 횟수 + 총 거리 합
+  const doneRuns = source.filter(r => r.type !== 'special');
+  const doneCount = doneRuns.length;
+  const totalKm = doneRuns.reduce((s, r) => s + (parseFloat(r.distance) || 0), 0);
+  const periodTxt = rankTab === 'all' ? '지금까지' : '이번 달';
+  const summary = `
+    <div class="rank-summary">
+      <div class="rank-sum-item"><div class="rank-sum-num">${doneCount}<small>회</small></div><div class="rank-sum-lbl">${periodTxt} 완료한 런</div></div>
+      <div class="rank-sum-item"><div class="rank-sum-num">${fmtKm(totalKm)}<small>km</small></div><div class="rank-sum-lbl">함께 달린 거리</div></div>
+    </div>`;
+
   if (lb.length === 0) {
-    el.innerHTML = `<div class="rank-empty">완료된 러닝 기록이 없어요</div>`;
+    el.innerHTML = summary + `<div class="rank-empty">완료된 러닝 기록이 없어요</div>`;
     return;
   }
 
@@ -2236,7 +2252,7 @@ function renderRanking() {
       `<div class="rr-val"><div class="rr-km">${e.count}<small>회</small></div><div class="rr-cnt">${fmtKm(e.distance)}km</div></div></div>`;
   }).join('');
 
-  el.innerHTML = podium + (rows ? `<div class="rank-list">${rows}</div>` : '');
+  el.innerHTML = summary + podium + (rows ? `<div class="rank-list">${rows}</div>` : '');
 }
 
 function renderAnalyticsContent() {
