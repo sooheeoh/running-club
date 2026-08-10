@@ -119,6 +119,11 @@
   /* LIST VIEW */
   .list-wrap { padding: 0 16px; }
   .section-title { font-size: 13px; font-weight: 700; color: var(--text-secondary); padding: 16px 4px 8px; text-transform: uppercase; letter-spacing: .5px; }
+  .nudge { margin: 12px 22px 0; background: var(--yellow); color: var(--ink); border-radius: 14px; padding: 12px 14px; display: flex; align-items: center; gap: 9px; cursor: pointer; }
+  .nudge:active { transform: scale(.99); }
+  .nudge-ic { font-size: 16px; flex: none; }
+  .nudge-txt { flex: 1; min-width: 0; font-size: 13px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .nudge-btn { flex: none; background: rgba(0,0,0,.14); border-radius: 999px; padding: 6px 11px; font-size: 12px; font-weight: 800; }
 
   /* RUN CARD */
   .run-card {
@@ -710,6 +715,7 @@
 
 <!-- MAIN CONTENT -->
 <div id="view-calendar">
+  <div id="creator-nudge"></div>
   <div class="calendar-wrap">
     <div class="cal-nav">
       <button onclick="changeMonth(-1)">‹</button>
@@ -777,6 +783,16 @@
       <input type="text" class="form-input" id="f-nickname" placeholder="예: 붕어빵, 달리기왕, 민수" maxlength="12">
     </div>
     <button class="btn-primary" onclick="confirmNickname()">확인</button>
+  </div>
+</div>
+
+<!-- 사진 완료 리마인드 MODAL (런 개설 직후) -->
+<div class="modal-overlay" id="photo-remind-modal-overlay" onclick="handleOverlayClick(event, 'photo-remind-modal-overlay')">
+  <div class="modal" id="photo-remind-modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">📸 런 완료, 잊지 마세요!</div>
+    <p style="font-size:14px; color:var(--text-secondary); margin-bottom:20px; line-height:1.6;">런을 마치면 잊지 말고 <b style="color:var(--text)">사진 2장</b>을 업로드해서 런을 완료해주세요. 그래야 랭킹·기록에 반영돼요!</p>
+    <button class="btn-primary" onclick="closeModal('photo-remind-modal-overlay')">확인</button>
   </div>
 </div>
 
@@ -1305,9 +1321,36 @@ function openAddForm() {
 
 function renderAll() {
   renderTicker(); // 런 데이터가 바뀌면 전광판 문장도 갱신
+  renderCreatorNudge();
   renderCalendar();
   if (_activeTab === 'ranking') renderRanking();
   if (_activeTab === 'my') renderMy();
+}
+
+// 개설자 넛지: 내가 개설한 지난 런 중 사진 미완(완료 안 됨) 있으면 상단 배너
+function renderCreatorNudge() {
+  const el = document.getElementById('creator-nudge');
+  if (!el) return;
+  const now = Date.now();
+  const GRACE = 2 * 60 * 60 * 1000; // 런 시작 2시간 후부터 노출
+  const pending = myNickname
+    ? runs.filter(r => {
+        if (r.createdBy !== myNickname || r.type === 'special' || !r.date || isCompleted(r)) return false;
+        // 런 시작 시각(시간 있으면 date+time, 없으면 그 날의 끝) + 2시간이 지나야 노출
+        const startMs = (r.time && /^\d{1,2}:\d{2}$/.test(r.time))
+          ? new Date(`${r.date}T${r.time.padStart(5, '0')}:00`).getTime()
+          : new Date(`${r.date}T23:59:59`).getTime();
+        return now >= startMs + GRACE;
+      }).sort((a, b) => b.date.localeCompare(a.date))
+    : [];
+  if (!pending.length) { el.innerHTML = ''; return; }
+  const r = pending[0];
+  const more = pending.length > 1 ? ` 외 ${pending.length - 1}` : '';
+  el.innerHTML = `<div class="nudge" onclick="openEditModal('${r.id}')">
+    <span class="nudge-ic">📸</span>
+    <span class="nudge-txt"><b>${esc(r.title || '런')}</b>${more} · 사진 올려 완료해요</span>
+    <span class="nudge-btn">올리기</span>
+  </div>`;
 }
 
 // ─── CALENDAR ────────────────────────────────────────────────────
@@ -1684,7 +1727,9 @@ async function saveRun() {
       await db.collection('runs').doc(runId).set(data);
       showToast('런이 추가됐어요 🏃‍♀️');
     }
+    const wasCreate = !editingRunId;
     closeModal('add-modal-overlay');
+    if (wasCreate) openModal('photo-remind-modal-overlay'); // 개설 직후 사진 완료 리마인드
   } catch (e) {
     console.error(e);
     showToast('저장에 실패했어요. 다시 시도해주세요.');
