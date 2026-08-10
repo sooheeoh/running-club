@@ -1331,10 +1331,17 @@ function renderAll() {
 function renderCreatorNudge() {
   const el = document.getElementById('creator-nudge');
   if (!el) return;
-  const today = new Date().toISOString().slice(0, 10);
+  const now = Date.now();
+  const GRACE = 2 * 60 * 60 * 1000; // 런 시작 2시간 후부터 노출
   const pending = myNickname
-    ? runs.filter(r => r.createdBy === myNickname && r.type !== 'special' && r.date && r.date <= today && !isCompleted(r))
-        .sort((a, b) => b.date.localeCompare(a.date))
+    ? runs.filter(r => {
+        if (r.createdBy !== myNickname || r.type === 'special' || !r.date || isCompleted(r)) return false;
+        // 런 시작 시각(시간 있으면 date+time, 없으면 그 날의 끝) + 2시간이 지나야 노출
+        const startMs = (r.time && /^\d{1,2}:\d{2}$/.test(r.time))
+          ? new Date(`${r.date}T${r.time.padStart(5, '0')}:00`).getTime()
+          : new Date(`${r.date}T23:59:59`).getTime();
+        return now >= startMs + GRACE;
+      }).sort((a, b) => b.date.localeCompare(a.date))
     : [];
   if (!pending.length) { el.innerHTML = ''; return; }
   const r = pending[0];
