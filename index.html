@@ -543,9 +543,10 @@
   .my-name { font-size: 20px; font-weight: 800; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .my-sub { font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-top: 3px; }
   .my-edit { flex: none; background: var(--surface); color: var(--text-secondary); border: none; border-radius: 999px; padding: 8px 13px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; }
-  .my-stats { display: flex; gap: 10px; margin-top: 18px; }
-  .my-stat { flex: 1; background: var(--surface); border-radius: 16px; padding: 16px 10px; text-align: center; }
+  .my-stats { display: flex; gap: 10px; margin-top: 14px; }
+  .my-stat { flex: 1; min-width: 0; background: var(--surface); border-radius: 16px; padding: 16px 10px; text-align: center; }
   .my-stat-num { font-size: 24px; font-weight: 800; color: var(--yellow); line-height: 1; }
+  .my-stat-num.txt { font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .my-stat-lbl { font-size: 11px; font-weight: 700; color: var(--text-secondary); margin-top: 6px; }
   .my-empty { text-align: center; padding: 60px 20px; }
   .my-empty-t { font-size: 16px; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
@@ -2148,6 +2149,24 @@ function avatarStyle(name) {
 const fmtKm = d => (d % 1 === 0 ? d : d.toFixed(1));
 
 // ─── MY 개인 대시보드 ────────────────────────────────────────────
+// 최빈값(가장 자주 나온 값)
+function _mode(arr) {
+  if (!arr || !arr.length) return null;
+  const c = {}; let best = null, bestN = 0;
+  for (const v of arr) { c[v] = (c[v] || 0) + 1; if (c[v] > bestN) { bestN = c[v]; best = v; } }
+  return best;
+}
+// 'HH:MM' → 시간대 라벨
+function _timeBucket(t) {
+  const h = parseInt((t || '').slice(0, 2), 10);
+  if (isNaN(h)) return t;
+  if (h < 5) return '새벽';
+  if (h < 11) return '아침';
+  if (h < 14) return '점심';
+  if (h < 17) return '오후';
+  if (h < 21) return '저녁';
+  return '밤';
+}
 function renderMy() {
   const el = document.getElementById('my-content');
   if (!el) return;
@@ -2177,6 +2196,11 @@ function renderMy() {
     subText = diff <= 0 ? '오늘 런이 있어요!' : `다음 런 D-${diff}`;
   }
   const s = avatarStyle(myNickname);
+  // 주로 뛰는 시간/곳 — 내 참여 런에서 최빈값(추가 조회 없이 클라이언트 집계)
+  const topTime = _mode(mine.map(r => r.time).filter(Boolean));
+  const topLoc = _mode(mine.map(r => r.location).filter(Boolean));
+  const timeLabel = topTime ? _timeBucket(topTime) : '–';
+  const locLabel = topLoc || '–';
 
   el.innerHTML = `
     <div class="my-profile">
@@ -2191,6 +2215,10 @@ function renderMy() {
       <div class="my-stat"><div class="my-stat-num">${myDone.length}</div><div class="my-stat-lbl">함께한 런</div></div>
       <div class="my-stat"><div class="my-stat-num">${myUpcoming.length}</div><div class="my-stat-lbl">다가오는 런</div></div>
       <div class="my-stat"><div class="my-stat-num">${myHosted.length}</div><div class="my-stat-lbl">내가 개설</div></div>
+    </div>
+    <div class="my-stats">
+      <div class="my-stat"><div class="my-stat-num txt">${esc(timeLabel)}</div><div class="my-stat-lbl">주로 뛰는 시간</div></div>
+      <div class="my-stat"><div class="my-stat-num txt">${esc(locLabel)}</div><div class="my-stat-lbl">주로 뛰는 곳</div></div>
     </div>
     <div class="section-title">다가오는 내 런</div><div id="my-upcoming"></div>
     <div class="section-title">완료한 런</div><div id="my-done"></div>
