@@ -123,7 +123,7 @@
   .nudge:active { transform: scale(.99); }
   .nudge-ic { font-size: 16px; flex: none; }
   .nudge-txt { flex: 1; min-width: 0; font-size: 13px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .nudge-btn { flex: none; background: rgba(0,0,0,.14); border-radius: 999px; padding: 6px 11px; font-size: 12px; font-weight: 800; }
+  .nudge-arrow { flex: none; font-size: 20px; font-weight: 800; line-height: 1; opacity: .55; }
 
   /* RUN CARD */
   .run-card {
@@ -790,9 +790,9 @@
 <div class="modal-overlay" id="photo-remind-modal-overlay" onclick="handleOverlayClick(event, 'photo-remind-modal-overlay')">
   <div class="modal" id="photo-remind-modal">
     <div class="modal-handle"></div>
-    <div class="modal-title">📸 런 완료, 잊지 마세요!</div>
+    <div class="modal-title">📸 개설 전에 한 가지!</div>
     <p style="font-size:14px; color:var(--text-secondary); margin-bottom:20px; line-height:1.6;">런을 마치면 잊지 말고 <b style="color:var(--text)">사진 2장</b>을 업로드해서 런을 완료해주세요. 그래야 랭킹·기록에 반영돼요!</p>
-    <button class="btn-primary" onclick="closeModal('photo-remind-modal-overlay')">확인</button>
+    <button class="btn-primary" onclick="confirmPhotoRemind()">확인하고 개설하기</button>
   </div>
 </div>
 
@@ -1348,8 +1348,8 @@ function renderCreatorNudge() {
   const more = pending.length > 1 ? ` 외 ${pending.length - 1}` : '';
   el.innerHTML = `<div class="nudge" onclick="openEditModal('${r.id}')">
     <span class="nudge-ic">📸</span>
-    <span class="nudge-txt"><b>${esc(r.title || '런')}</b>${more} · 사진 올려 완료해요</span>
-    <span class="nudge-btn">올리기</span>
+    <span class="nudge-txt">${esc(myNickname)}님, <b>${esc(r.title || '지난 런')}</b>${more} 사진 올려주세요</span>
+    <span class="nudge-arrow">›</span>
   </div>`;
 }
 
@@ -1717,25 +1717,41 @@ async function saveRun() {
       if (formType !== 'special') data.type = firebase.firestore.FieldValue.delete();
       await db.collection('runs').doc(editingRunId).update(data);
       showToast('런이 수정됐어요 ✅');
+      closeModal('add-modal-overlay');
     } else {
+      // 새 런: 바로 저장하지 않고 사진 안내 팝업의 '확인'을 눌러야 실제로 개설된다.
       data.createdBy = myNickname || '';
       data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
       if (myNickname) {
         const others = (data.participants || []).filter(p => p !== myNickname);
         data.participants = [myNickname, ...others];
       }
-      await db.collection('runs').doc(runId).set(data);
-      showToast('런이 추가됐어요 🏃‍♀️');
+      _pendingCreate = { runId, data };
+      closeModal('add-modal-overlay');
+      openModal('photo-remind-modal-overlay');
     }
-    const wasCreate = !editingRunId;
-    closeModal('add-modal-overlay');
-    if (wasCreate) openModal('photo-remind-modal-overlay'); // 개설 직후 사진 완료 리마인드
   } catch (e) {
     console.error(e);
     showToast('저장에 실패했어요. 다시 시도해주세요.');
   } finally {
     btn.disabled = false;
     btn.textContent = editingRunId ? '수정 저장' : '저장하기';
+  }
+}
+
+// 사진 안내 팝업의 '확인' → 실제 런 개설
+let _pendingCreate = null;
+async function confirmPhotoRemind() {
+  const p = _pendingCreate;
+  _pendingCreate = null;
+  closeModal('photo-remind-modal-overlay');
+  if (!p) return;
+  try {
+    await db.collection('runs').doc(p.runId).set(p.data);
+    showToast('런이 개설됐어요 🏃‍♀️');
+  } catch (e) {
+    console.error(e);
+    showToast('개설에 실패했어요. 다시 시도해주세요.');
   }
 }
 
