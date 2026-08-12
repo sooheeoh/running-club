@@ -620,6 +620,9 @@
   .dt-stat:first-child .dt-num { color: var(--yellow); }
   .dt-lbl { font-size: 11px; font-weight: 700; color: var(--muted); margin-top: 5px; }
   .dt-block { padding: 18px 0 0; }
+  .dt-course { display: inline-flex; align-items: center; gap: 7px; background: var(--surface); border: 1px solid var(--border); color: var(--yellow); font-size: 13px; font-weight: 800; padding: 10px 15px; border-radius: 999px; text-decoration: none; }
+  .dt-course:active { transform: scale(.98); }
+  .dt-course-arrow { opacity: .7; }
   .dt-block-t { font-size: 15px; font-weight: 800; margin-bottom: 11px; }
   .dt-desc { background: var(--surface); border-radius: 14px; padding: 13px 15px; font-size: 13.5px; line-height: 1.5; color: #4A4A44; }
   .dt-avs { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -1532,7 +1535,7 @@ async function openDetail(run) {
   if (run.courseUrl) {
     // 스킴(https://)이 없으면 상대경로로 인식돼 404가 나므로 보정
     const courseHref = /^https?:\/\//i.test(run.courseUrl) ? run.courseUrl : 'https://' + run.courseUrl;
-    body.innerHTML += `<div class="dt-block"><a href="${esc(courseHref)}" target="_blank" rel="noopener noreferrer" style="font-size:13px;font-weight:700;color:var(--ink)">🗺️ 코스 보기 →</a></div>`;
+    body.innerHTML += `<div class="dt-block"><a class="dt-course" href="${esc(courseHref)}" target="_blank" rel="noopener noreferrer">🗺️ 코스 참고 <span class="dt-course-arrow">→</span></a></div>`;
   }
 
   // 참여자 아바타 — 색은 그때그때 랜덤
