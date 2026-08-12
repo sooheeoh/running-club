@@ -1679,12 +1679,21 @@ function removeExistingPhoto(i) {
 }
 
 // ─── SAVE ────────────────────────────────────────────────────────
+// 코스 입력값이 '링크'인지 검사(스킴 없어도 도메인 형태면 통과, 공백/일반 텍스트는 거부)
+function isLinkLike(raw) {
+  if (/\s/.test(raw)) return false;
+  const u = /^https?:\/\//i.test(raw) ? raw : 'https://' + raw;
+  try { return new URL(u).hostname.includes('.'); } catch (e) { return false; }
+}
+
 async function saveRun() {
   const title = document.getElementById('f-title').value.trim();
   const date = document.getElementById('f-date').value;
   const distanceVal = parseFloat(document.getElementById('f-distance').value);
   if (!title || !date) { showToast('제목과 날짜는 필수예요!'); return; }
   if (formType !== 'special' && (!distanceVal || distanceVal <= 0)) { showToast('거리를 입력해주세요!'); return; }
+  const courseVal = document.getElementById('f-course-url').value.trim();
+  if (courseVal && !isLinkLike(courseVal)) { showToast('코스는 링크(URL)만 넣어주세요 🔗'); return; }
 
   const btn = document.getElementById('save-btn');
   btn.disabled = true;
