@@ -1185,6 +1185,14 @@ let myNickname = localStorage.getItem('rc_nickname') || '';
 let pendingJoinRunId = null;
 let pendingNicknameEdit = false; // MY에서 닉네임 변경 중이면 확인 후 폼 대신 MY 갱신
 
+// 닉네임 저장 보강: 인앱 웹뷰(카톡 등)에서 마지막 쓰기가 디스크에 안 남는 문제 완화.
+// 저장 시점 외에도 앱이 숨겨지거나 닫힐 때 한 번 더 저장해 플러시 기회를 늘린다.
+function persistNickname() {
+  try { if (myNickname) localStorage.setItem('rc_nickname', myNickname); } catch (e) {}
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') persistNickname(); });
+window.addEventListener('pagehide', persistNickname);
+
 // ─── INIT ────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
   const now = new Date();
@@ -1258,7 +1266,7 @@ function confirmNickname() {
   const val = document.getElementById('f-nickname').value.trim();
   if (!val) { showToast('닉네임을 입력해주세요'); return; }
   myNickname = val;
-  localStorage.setItem('rc_nickname', val);
+  persistNickname();
   closeModal('nickname-modal-overlay');
   if (pendingNicknameEdit) {
     pendingNicknameEdit = false;
