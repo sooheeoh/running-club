@@ -1530,7 +1530,9 @@ async function openDetail(run) {
     body.innerHTML += `<div class="dt-block"><div class="dt-desc">${esc(run.description)}</div></div>`;
   }
   if (run.courseUrl) {
-    body.innerHTML += `<div class="dt-block"><a href="${esc(run.courseUrl)}" target="_blank" style="font-size:13px;font-weight:700;color:var(--ink)">🗺️ 코스 보기 →</a></div>`;
+    // 스킴(https://)이 없으면 상대경로로 인식돼 404가 나므로 보정
+    const courseHref = /^https?:\/\//i.test(run.courseUrl) ? run.courseUrl : 'https://' + run.courseUrl;
+    body.innerHTML += `<div class="dt-block"><a href="${esc(courseHref)}" target="_blank" rel="noopener noreferrer" style="font-size:13px;font-weight:700;color:var(--ink)">🗺️ 코스 보기 →</a></div>`;
   }
 
   // 참여자 아바타 — 색은 그때그때 랜덤
