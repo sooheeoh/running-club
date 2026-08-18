@@ -1006,9 +1006,19 @@ if (localStorage.getItem('rc_gate') !== GATE_PASSCODE) {
   else document.addEventListener('DOMContentLoaded', lockGate);
 }
 
+// 로컬(사용자 시간대) 기준 오늘/이번달 — toISOString(UTC)이 KST 새벽에 하루 밀리던 문제 방지
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+function monthStrNow() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
 // ─── COMPLETED CHECK ─────────────────────────────────────────────
 function isCompleted(run) {
-  const today = new Date().toISOString().slice(0,10);
+  const today = todayStr();
   // 사진 2장을 모두 올려야 완료 처리 (1장만으로는 미완료)
   return run.date <= today && run.photos && run.photos.length >= 2;
 }
@@ -1018,16 +1028,16 @@ function isCompleted(run) {
 let _tickerLast = '';
 
 function tickerPhrases() {
-  const todayStr = new Date().toISOString().slice(0,10);
-  const monthStr = todayStr.slice(0,7);
+  const today = todayStr();
+  const monthStr = today.slice(0,7);
   const upcoming = (runs || [])
-    .filter(r => r.date > todayStr || (r.date === todayStr && !isCompleted(r)))
+    .filter(r => r.date > today || (r.date === today && !isCompleted(r)))
     .sort((a,b) => a.date.localeCompare(b.date));
 
   const dynamic = [];
 
   // 1) 이번 주(월~일) 예정된 런 수 — 오늘 ~ 이번 주 일요일까지
-  const todayDate = new Date(todayStr);
+  const todayDate = new Date(today);
   const daysToSunday = (7 - todayDate.getUTCDay()) % 7; // 일요일(0)이면 오늘이 주의 끝
   const weekEnd = new Date(todayDate);
   weekEnd.setUTCDate(todayDate.getUTCDate() + daysToSunday);
@@ -1038,7 +1048,7 @@ function tickerPhrases() {
   // 2) 다음 런까지 카운트다운 (today / tomorrow / in N days)
   if (upcoming.length) {
     const next = upcoming[0];
-    const diff = Math.round((new Date(next.date) - new Date(todayStr)) / 86400000);
+    const diff = Math.round((new Date(next.date) - new Date(today)) / 86400000);
     const when = diff <= 0 ? 'is today' : diff === 1 ? 'is tomorrow' : `in ${diff} days`;
     dynamic.push(`Next run ${when} · ${next.title}`);
   }
@@ -1112,7 +1122,7 @@ function renderTicker() {
   renderNeonTicker();
   const el = document.getElementById('next-banner');
   if (!el) return;
-  const today = new Date().toISOString().slice(0,10);
+  const today = todayStr();
   const sortKey = r => `${r.date}T${r.time || '99:99'}`;
   const upcoming = runs
     .filter(r => r.date > today || (r.date === today && !isCompleted(r)))
@@ -1406,7 +1416,7 @@ function renderCalendar() {
     const cls = ['cal-cell', isToday ? 'today' : '', dow === 0 ? 'sunday' : dow === 6 ? 'saturday' : ''].filter(Boolean).join(' ');
     const dayRuns = runMap[dateStr] || [];
     const dots = dayRuns.map(r => {
-      const isPast = r.date < today.toISOString().slice(0,10);
+      const isPast = r.date < todayStr();
       const comp = isCompleted(r);
       const cls = r.type === 'special' ? 'special' : comp ? 'completed' : isPast ? 'past' : 'upcoming';
       return `<div class="run-dot ${cls}" title="${r.type === 'special' ? '특별 세션' : comp ? '완료' : ''}"></div>`;
@@ -1425,7 +1435,7 @@ function renderCalendar() {
 
 // 달력 하단 목록: 예정된 런(가까운 순) → 지난 런(최신 순, 3개씩 더 보기)
 function renderCalRunsList() {
-  const today = new Date().toISOString().slice(0,10);
+  const today = todayStr();
   const sortKey = r => `${r.date}T${r.time || '99:99'}`; // 날짜+시간 순, 시간 없으면 뒤로
   const upcoming = runs.filter(r => r.date > today || (r.date === today && !isCompleted(r))).sort((a,b) => sortKey(a).localeCompare(sortKey(b)));
   const done = runs.filter(r => r.date === today && isCompleted(r));
@@ -1476,7 +1486,7 @@ function renderRunsInto(containerId, runsArr, emptyMsg) {
 }
 
 function buildRunCard(run) {
-  const today = new Date().toISOString().slice(0,10);
+  const today = todayStr();
   const completed = isCompleted(run);
   const isPast = run.date < today || completed;
   const card = document.createElement('div');
@@ -1513,7 +1523,7 @@ async function openDetailById(id) {
 async function openDetail(run) {
   const isSpecial = run.type === 'special';
   const completed = isCompleted(run);
-  const today = new Date().toISOString().slice(0,10);
+  const today = todayStr();
   const parts = run.participants || [];
 
   let pillTxt = '모집중', pillCls = 'open';
@@ -2253,7 +2263,7 @@ function renderMy() {
     return;
   }
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayStr();
   const sortKey = r => `${r.date}T${r.time || '99:99'}`;
   const mine = runs.filter(r => (r.participants || []).includes(myNickname));
   const myUpcoming = mine
@@ -2293,7 +2303,7 @@ function renderMy() {
 }
 
 function renderRanking() {
-  const monthStr = new Date().toISOString().slice(0, 7);
+  const monthStr = monthStrNow();
   const completedAll = runs.filter(isCompleted);
   const source = rankTab === 'all' ? completedAll : completedAll.filter(r => r.date && r.date.startsWith(monthStr));
   const lb = buildLeaderboard(source);
@@ -2347,7 +2357,7 @@ function renderRanking() {
 }
 
 function renderAnalyticsContent() {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayStr();
   const monthStr = today.slice(0, 7);
 
   const completedAll = runs.filter(isCompleted);
