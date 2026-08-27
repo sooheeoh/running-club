@@ -573,6 +573,11 @@
   .my-name { font-size: 20px; font-weight: 800; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .my-sub { font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-top: 3px; }
   .my-edit { flex: none; background: var(--surface); color: var(--text-secondary); border: none; border-radius: 999px; padding: 8px 13px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; }
+  .my-spots { display: flex; flex-direction: column; gap: 8px; }
+  .my-spot { display: flex; align-items: center; gap: 12px; background: var(--surface); border-radius: 14px; padding: 12px 14px; }
+  .my-spot-rank { flex: none; width: 22px; height: 22px; border-radius: 50%; background: var(--yellow); color: var(--ink); font-size: 12px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+  .my-spot-name { flex: 1; font-size: 14px; font-weight: 700; color: var(--text); }
+  .my-spot-cnt { flex: none; font-size: 13px; font-weight: 800; color: var(--yellow); }
   .my-stats { display: flex; gap: 10px; margin-top: 18px; }
   .my-stat { flex: 1; background: var(--surface); border-radius: 16px; padding: 16px 10px; text-align: center; }
   .my-stat-num { font-size: 24px; font-weight: 800; color: var(--yellow); line-height: 1; }
@@ -2278,6 +2283,33 @@ function avatarStyle(name) {
 const fmtKm = d => (d % 1 === 0 ? d : d.toFixed(1));
 
 // ─── MY 개인 대시보드 ────────────────────────────────────────────
+// 장소(자유 텍스트) → 서울 자치구 근사 분류 (출몰지 통계용)
+const _GU_MAP = [
+  [/고속터미널|고터|반포|잠원|양재|서초|방배/, '서초구'],
+  [/잠실|올림픽공원|석촌|송파|방이/, '송파구'],
+  [/남산|충무로|중부여가|중부공원|명동|을지로|서울중부/, '중구'],
+  [/서울숲|성수|왕십리|응봉|옥수/, '성동구'],
+  [/자양|구의|어린이대공원|건대|군자|뚝섬/, '광진구'],
+  [/석계|월계|노원|수락산|공릉|중계|상계|경춘선|하계/, '노원구'],
+  [/광화문|경복궁|종로|혜화|삼청|부암/, '종로구'],
+  [/성북천|한성대|정릉|길음|돈암/, '성북구'],
+  [/동작|이수|노량진|상도|흑석/, '동작구'],
+  [/이촌|용산|한남|이태원|서빙고/, '용산구'],
+  [/도봉산|도봉|창동|방학/, '도봉구'],
+  [/여의도|여의나루|영등포|선유도/, '영등포구'],
+  [/망원|합정|상암|마포/, '마포구'],
+  [/연대|신촌|서대문|홍제/, '서대문구'],
+  [/청담|압구정|삼성역|대치|역삼|강남/, '강남구'],
+  [/우이|미아|수유|강북/, '강북구'],
+  [/중랑천|면목|상봉/, '중랑구'],
+  [/자라섬|가평|북한강|남이섬/, '가평'],
+];
+function _guOf(loc) {
+  if (!loc) return null;
+  for (const [re, gu] of _GU_MAP) if (re.test(loc)) return gu;
+  return null;
+}
+
 function renderMy() {
   const el = document.getElementById('my-content');
   if (!el) return;
@@ -2308,6 +2340,16 @@ function renderMy() {
   }
   const s = avatarStyle(myNickname);
 
+  // 출몰지 TOP 3 (완료한 런의 장소를 구 단위로 집계)
+  const guCount = {};
+  myDone.forEach(r => { const g = _guOf(r.location || ''); if (g) guCount[g] = (guCount[g] || 0) + 1; });
+  const top3 = Object.entries(guCount).sort((a, b) => b[1] - a[1]).slice(0, 3);
+  const spotHtml = top3.length ? `
+    <div class="section-title">📍 나의 출몰지 TOP 3</div>
+    <div class="my-spots">
+      ${top3.map(([g, c], i) => `<div class="my-spot"><span class="my-spot-rank">${i + 1}</span><span class="my-spot-name">${esc(g)}</span><span class="my-spot-cnt">${c}회</span></div>`).join('')}
+    </div>` : '';
+
   el.innerHTML = `
     <div class="my-profile">
       <div class="my-av" style="background:${s.bg};color:${s.color}">${esc(myNickname.charAt(0))}</div>
@@ -2322,6 +2364,7 @@ function renderMy() {
       <div class="my-stat"><div class="my-stat-num">${myUpcoming.length}</div><div class="my-stat-lbl">다가오는 런</div></div>
       <div class="my-stat"><div class="my-stat-num">${myHosted.length}</div><div class="my-stat-lbl">내가 개설</div></div>
     </div>
+    ${spotHtml}
     <div class="section-title">다가오는 내 런</div><div id="my-upcoming"></div>
     <div class="section-title">완료한 런</div><div id="my-done"></div>
     <div class="section-title">내가 개설한 런</div><div id="my-hosted"></div>`;
