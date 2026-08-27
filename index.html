@@ -2283,31 +2283,38 @@ function avatarStyle(name) {
 const fmtKm = d => (d % 1 === 0 ? d : d.toFixed(1));
 
 // ─── MY 개인 대시보드 ────────────────────────────────────────────
-// 장소(자유 텍스트) → 서울 자치구 근사 분류 (출몰지 통계용)
-const _GU_MAP = [
-  [/고속터미널|고터|반포|잠원|양재|서초|방배/, '서초구'],
-  [/잠실|올림픽공원|석촌|송파|방이/, '송파구'],
-  [/남산|충무로|중부여가|중부공원|명동|을지로|서울중부/, '중구'],
-  [/서울숲|성수|왕십리|응봉|옥수/, '성동구'],
-  [/자양|구의|어린이대공원|건대|군자|뚝섬/, '광진구'],
-  [/석계|월계|노원|수락산|공릉|중계|상계|경춘선|하계/, '노원구'],
-  [/광화문|경복궁|종로|혜화|삼청|부암/, '종로구'],
-  [/성북천|한성대|정릉|길음|돈암/, '성북구'],
-  [/동작|이수|노량진|상도|흑석/, '동작구'],
-  [/이촌|용산|한남|이태원|서빙고/, '용산구'],
-  [/도봉산|도봉|창동|방학/, '도봉구'],
-  [/여의도|여의나루|영등포|선유도/, '영등포구'],
-  [/망원|합정|상암|마포/, '마포구'],
-  [/연대|신촌|서대문|홍제/, '서대문구'],
-  [/청담|압구정|삼성역|대치|역삼|강남/, '강남구'],
-  [/우이|미아|수유|강북/, '강북구'],
-  [/중랑천|면목|상봉/, '중랑구'],
-  [/자라섬|가평|북한강|남이섬/, '가평'],
+// 장소(자유 텍스트) → 거점(동네) 준정리 라벨 (구까지 안 올리고 살짝만 정리)
+const _SPOT_MAP = [
+  [/고속터미널|고터|반포|잠원/, '고터·반포한강'],
+  [/서울숲/, '서울숲'],
+  [/자양|뚝섬/, '자양·뚝섬한강'],
+  [/동작/, '동작대교'],
+  [/잠실/, '잠실'],
+  [/올림픽공원/, '올림픽공원'],
+  [/남산|충무로|중부여가|중부공원|서울중부/, '남산'],
+  [/경복궁|광화문|삼청/, '경복궁·광화문'],
+  [/여의도|여의나루|선유도/, '여의도'],
+  [/이촌/, '이촌한강'],
+  [/어린이대공원/, '어린이대공원'],
+  [/경춘선|석계/, '경춘선숲길'],
+  [/도봉산/, '도봉산·북중랑천'],
+  [/중랑천|군자교|월계|노원교|수락산/, '중랑천'],
+  [/양재/, '양재시민의숲'],
+  [/성북천|한성대/, '성북천'],
+  [/청담/, '청담한강'],
+  [/우이/, '우이천'],
+  [/망원/, '망원한강'],
+  [/연대|신촌|서대문/, '신촌'],
+  [/구의/, '구의'],
+  [/자라섬|가평|북한강|남이섬/, '가평 자라섬'],
+  [/석촌|송파/, '송파'],
 ];
-function _guOf(loc) {
+function _spotOf(loc) {
   if (!loc) return null;
-  for (const [re, gu] of _GU_MAP) if (re.test(loc)) return gu;
-  return null;
+  for (const [re, name] of _SPOT_MAP) if (re.test(loc)) return name;
+  // 매핑 안 되면: 괄호/역·출구 등 잡음 제거한 앞부분만
+  const s = String(loc).replace(/\(.*$/, '').split(/\s/)[0].replace(/[0-9]+-?[0-9]*/g, '').replace(/(역|출구|출|번|앞|근처|부근|점)$/, '').trim();
+  return s.length >= 2 ? s : null;
 }
 
 function renderMy() {
@@ -2340,12 +2347,12 @@ function renderMy() {
   }
   const s = avatarStyle(myNickname);
 
-  // 출몰지 TOP 3 (완료한 런의 장소를 구 단위로 집계)
-  const guCount = {};
-  myDone.forEach(r => { const g = _guOf(r.location || ''); if (g) guCount[g] = (guCount[g] || 0) + 1; });
-  const top3 = Object.entries(guCount).sort((a, b) => b[1] - a[1]).slice(0, 3);
+  // 주로 뛰는 곳 TOP 3 (완료한 런의 장소를 거점 단위로 집계)
+  const spotCount = {};
+  myDone.forEach(r => { const g = _spotOf(r.location || ''); if (g) spotCount[g] = (spotCount[g] || 0) + 1; });
+  const top3 = Object.entries(spotCount).sort((a, b) => b[1] - a[1]).slice(0, 3);
   const spotHtml = top3.length ? `
-    <div class="section-title">📍 나의 출몰지 TOP 3</div>
+    <div class="section-title">📍 주로 뛰는 곳 TOP 3</div>
     <div class="my-spots">
       ${top3.map(([g, c], i) => `<div class="my-spot"><span class="my-spot-rank">${i + 1}</span><span class="my-spot-name">${esc(g)}</span><span class="my-spot-cnt">${c}회</span></div>`).join('')}
     </div>` : '';
