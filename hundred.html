@@ -435,7 +435,8 @@ els.forEach(function(e){io.observe(e);});})();
     var maxP=null,maxD=null;
     nonspecial.forEach(function(r){ var np=(r.participants||[]).length,d=parseFloat(r.distance)||0;
       if(!maxP||np>maxP.np)maxP={id:r.id,np:np}; if(!maxD||d>maxD.dist)maxD={id:r.id,dist:d}; });
-    var album=nonspecial.filter(function(r){return (r.photos||[]).length>=2;});
+    // 100번째 런까지만 (9/4 등 101번째 이후는 이 페이지에서 제외)
+    var album=nonspecial.filter(function(r){return (r.photos||[]).length>=2;}).slice(0,100);
     var MON={'04':'4월','05':'5월','06':'6월','07':'7월','08':'8월','09':'9월'};
     var months={}; album.forEach(function(r){ var k=r.date.slice(0,7); (months[k]=months[k]||[]).push(r); });
     var body=document.getElementById('galleryBody'); body.innerHTML='';
