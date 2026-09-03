@@ -179,7 +179,7 @@
     .cm-marquee{overflow:hidden;margin-top:9px;-webkit-mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent)}
     .cm-track{display:flex;align-items:flex-start;gap:9px;width:max-content;animation:cmscroll 64s linear infinite}
     .cm-track.rev{animation-duration:72s;animation-direction:reverse}
-    .cm-marquee:hover .cm-track{animation-play-state:paused}
+    .cm-track.paused{animation-play-state:paused}
     @keyframes cmscroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
     .cm-msg{flex:none;display:flex;flex-direction:column;gap:4px;width:200px;height:150px;background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:10px 12px;font-size:11.5px;line-height:1.5;color:var(--text);overflow:hidden}
     .cm-head{display:flex;align-items:center;gap:5px;flex:none}
@@ -190,6 +190,7 @@
     .cm-head .a{font-size:11.5px;font-weight:800;color:var(--blue-bright)}
     .cm-body{flex:1;font-size:11.5px;line-height:1.5;color:var(--text);word-break:break-word;overflow:hidden;display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical}
   </style>
+
 
 
 
@@ -504,10 +505,21 @@ els.forEach(function(e){io.observe(e);});})();
     var msgs = list.length? list : SEED;
     var full=msgs.concat(msgs); full.forEach(function(m){ A.appendChild(chip(m)); });
     var rev=msgs.slice().reverse(); var fullR=rev.concat(rev); fullR.forEach(function(m){ B.appendChild(chip(m)); });
+    bindWallPause(A,B);
   }
+  var wallBound=false;
+  function bindWallPause(A,B){
+    if(wallBound) return; wallBound=true;
+    var host=document.getElementById('celebrate');
+    function setPaused(on){ A.classList.toggle('paused',on); B.classList.toggle('paused',on); }
+    host.addEventListener('pointerdown',function(){ setPaused(true); });
+    ['pointerup','pointercancel','pointerleave'].forEach(function(ev){ host.addEventListener(ev,function(){ setPaused(false); }); });
+  }
+  var lastWall='';
   function watchWall(){
     db.collection('celebrations').orderBy('createdAt','desc').limit(200).onSnapshot(function(snap){
       var list=[]; snap.forEach(function(dd){ var x=dd.data(); if(x&&x.text) list.push({a:x.author||'익명', t:x.text}); });
+      var key=JSON.stringify(list); if(key===lastWall) return; lastWall=key;
       renderWall(list);
     }, function(e){ console.warn('wall',e&&e.code); renderWall([]); });
   }
