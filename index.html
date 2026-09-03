@@ -720,6 +720,14 @@
   .dt-avx { background: var(--card); color: var(--text-secondary); box-shadow: none; border: 1px solid var(--border); }
   .dt-edit { background: var(--surface); border-color: var(--border); color: var(--text); }
 </style>
+<style id="hundred-banner-css">
+  #hundred-banner{display:none;align-items:center;gap:9px;max-width:480px;margin:8px auto 0;padding:11px 12px;background:linear-gradient(90deg,rgba(226,219,20,.16),rgba(0,184,99,.12));border:1px solid rgba(226,219,20,.32);border-radius:13px;text-decoration:none;color:var(--text);font-size:13px}
+  #hundred-banner.show{display:flex}
+  #hundred-banner .hb-emoji{font-size:17px;line-height:1;flex:none}
+  #hundred-banner .hb-text{flex:1;line-height:1.4}
+  #hundred-banner .hb-text b{font-weight:800;color:var(--yellow,#E2DB14)}
+  #hundred-banner .hb-x{flex:none;background:none;border:none;color:var(--text-secondary,#9AA0A6);font-size:14px;cursor:pointer;padding:2px 4px;line-height:1}
+</style>
 </head>
 <body>
 
@@ -757,6 +765,11 @@
 
 <!-- NEON TICKER (전광판) -->
 <div class="neon-ticker" id="neon-ticker"><div class="neon-track" id="neon-track"></div></div>
+<!-- 100회 축하 배너 (한시적) -->
+<a id="hundred-banner" href="hundred.html">
+  <span class="hb-text"><b>100번째 런 달성 🎉</b> 축하하러 가기 →</span>
+  <button class="hb-x" aria-label="닫기" onclick="event.preventDefault();event.stopPropagation();dismissHundredBanner();">✕</button>
+</a>
 
 <!-- MAIN CONTENT -->
 <div id="view-calendar">
@@ -802,6 +815,10 @@
   <button class="bn-item" id="nav-ranking" onclick="showTab('ranking')">
     <svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="12" width="4.5" height="8" rx="1.2"/><rect x="9.7" y="7" width="4.5" height="13" rx="1.2"/><rect x="16.5" y="14" width="4.5" height="6" rx="1.2"/></svg>
     <span>랭킹</span>
+  </button>
+  <button class="bn-item" id="nav-hundred" onclick="location.href='hundred.html'">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v3a5 5 0 0 1-10 0V4z"/><path d="M7 5H4.2v1A3 3 0 0 0 7 9M17 5h2.8v1A3 3 0 0 1 17 9"/><line x1="12" y1="12" x2="12" y2="15.5"/><path d="M9 20h6M9.6 20l.4-4.5h4l.4 4.5"/></svg>
+    <span>100회</span>
   </button>
   <button class="bn-item" id="nav-my" onclick="showTab('my')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="8" r="3.8"/><path d="M4.5 20.5c0-4 3.6-6.2 7.5-6.2s7.5 2.2 7.5 6.2"/></svg>
@@ -2543,6 +2560,18 @@ function updateDescCount() {
   const el = document.getElementById('desc-count');
   if (ta && el) el.textContent = `${ta.value.length}/60`;
 }
+</script>
+<script>
+(function(){
+  var UNTIL='2026-09-09'; // 100회 배너 노출 종료일 (약 5일)
+  function pad(n){return String(n).padStart(2,'0');}
+  function today(){var d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
+  window.dismissHundredBanner=function(){ try{localStorage.setItem('rc_hundred_banner_off','1');}catch(e){} var el=document.getElementById('hundred-banner'); if(el) el.classList.remove('show'); };
+  try{
+    var off=false; try{off=localStorage.getItem('rc_hundred_banner_off')==='1';}catch(e){}
+    if(!off && today()<=UNTIL){ var el=document.getElementById('hundred-banner'); if(el) el.classList.add('show'); }
+  }catch(e){}
+})();
 </script>
 </body>
 </html>
