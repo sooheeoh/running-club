@@ -179,17 +179,19 @@
     .cm-marquee{overflow:hidden;margin-top:9px;-webkit-mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent)}
     .cm-track{display:flex;align-items:flex-start;gap:9px;width:max-content;animation:cmscroll 64s linear infinite}
     .cm-track.rev{animation-duration:72s;animation-direction:reverse}
-    .cm-marquee:hover .cm-track{animation-play-state:paused}
+    .cm-track.paused{animation-play-state:paused}
     @keyframes cmscroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-    .cm-msg{flex:none;display:flex;flex-direction:column;gap:4px;width:200px;background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:10px 12px;font-size:11.5px;line-height:1.5;color:var(--text)}
-    .cm-head{display:flex;align-items:center;gap:5px}
+    .cm-msg{flex:none;display:flex;flex-direction:column;gap:4px;width:200px;height:150px;background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:10px 12px;font-size:11.5px;line-height:1.5;color:var(--text);overflow:hidden}
+    .cm-head{display:flex;align-items:center;gap:5px;flex:none}
     .cm-head .pap{font-size:12px;line-height:1}
     .cm-head .pap.y{filter:sepia(1) saturate(4) hue-rotate(10deg) brightness(1.15)}
     .cm-head .pap.o{filter:sepia(1) saturate(6) hue-rotate(-15deg)}
     .cm-head .pap.r{filter:sepia(1) saturate(12) hue-rotate(-45deg) brightness(0.8) contrast(1.6)}
     .cm-head .a{font-size:11.5px;font-weight:800;color:var(--blue-bright)}
-    .cm-body{font-size:11.5px;line-height:1.5;color:var(--text);word-break:break-word}
+    .cm-body{flex:1;font-size:11.5px;line-height:1.5;color:var(--text);word-break:break-word;overflow:hidden;display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical}
   </style>
+
+
 
 
 
@@ -266,6 +268,8 @@
 
 
 
+
+
 <style id="gallerycss">
   #gallery .gctl{position:sticky;top:0;z-index:5;background:linear-gradient(180deg,var(--ink) 70%,transparent);padding:8px 0 10px;margin-bottom:4px}
   #gallery .gctl-row{display:flex;align-items:center;gap:8px}
@@ -285,8 +289,8 @@
   #gallery .gtags{display:flex;flex-wrap:wrap;gap:5px;margin:-2px 0 8px}
   #gallery .gtag{font-size:10.5px;font-weight:700;color:#2ED47F;background:rgba(0,184,99,.14);border:1px solid rgba(0,184,99,.3);border-radius:20px;padding:3px 9px}
   #gallery .gtag-hi{color:#161615;background:#E2DB14;border:none;font-weight:800}
-  #gallery .gstrip{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:5px}
-  #gallery .gpic{display:block;border-radius:9px;overflow:hidden;aspect-ratio:1/1;background:#0c0c0b}
+  #gallery .gstrip{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  #gallery .gpic{display:block;border-radius:10px;overflow:hidden;aspect-ratio:4/3;background:#0c0c0b}
   #gallery .gpic img{width:100%;height:100%;object-fit:cover;display:block}
   #gallery .gcm-list{margin-top:9px;display:flex;flex-direction:column;gap:5px}
   #gallery .gcm{background:var(--card2);border-radius:10px;padding:7px 10px;font-size:12.5px;line-height:1.45}
@@ -302,7 +306,7 @@
 </style>
   <section id="gallery">
     <div class="label">우리가 남긴 순간들 · 앨범</div>
-    <div class="gctl"><div class="gctl-row"><span class="gctl-lb">나</span><select id="gme"><option value="">닉네임 선택</option></select><label class="gtog"><input type="checkbox" id="gmine"><span>내 런만</span></label></div><div class="gctl-hint" id="gcount"></div></div>
+    <div class="gctl"><div class="gctl-row"><span class="gctl-lb">나</span><select id="gme"><option value="">전체 보기</option></select></div><div class="gctl-hint" id="gcount"></div></div>
     <div id="galleryBody"><div class="gempty">사진 불러오는 중…</div></div>
     <div class="ghint">사진을 누르면 원본이 새 탭에서 열려요 📷</div>
   </section>
@@ -466,14 +470,12 @@ els.forEach(function(e){io.observe(e);});})();
     });
     var sel=document.getElementById('gme');
     Object.keys(freq).sort(function(a,b){return freq[b]-freq[a];}).forEach(function(n){ var o=document.createElement('option'); o.value=n; o.textContent=n+' ('+freq[n]+')'; sel.appendChild(o); });
-    try{ var sv=localStorage.getItem('rc_album_me'); if(sv&&freq[sv]) sel.value=sv; else if(meNick&&freq[meNick]) sel.value=meNick; }catch(e){}
     sel.addEventListener('change',applyFilter);
-    document.getElementById('gmine').addEventListener('change',applyFilter);
     applyFilter();
   }
   function applyFilter(){
-    var sel=document.getElementById('gme'), mine=document.getElementById('gmine'), count=document.getElementById('gcount');
-    var meN=sel.value, on=mine.checked&&meN; try{localStorage.setItem('rc_album_me',meN||'');}catch(e){}
+    var sel=document.getElementById('gme'), count=document.getElementById('gcount');
+    var meN=sel.value, on=!!meN;
     var root=document.getElementById('gallery'); var cards=root.querySelectorAll('.gcard'), shown=0;
     cards.forEach(function(c){ var ps=(c.getAttribute('data-p')||'').split('|'); var vis=!on||ps.indexOf(meN)>=0; c.style.display=vis?'':'none'; if(vis)shown++; });
     root.querySelectorAll('.gmonth').forEach(function(m){ var n=m.nextElementSibling, any=false; while(n&&!n.classList.contains('gmonth')){ if(n.classList.contains('gcard')&&n.style.display!=='none')any=true; n=n.nextElementSibling; } m.style.display=any?'':'none'; });
@@ -503,10 +505,21 @@ els.forEach(function(e){io.observe(e);});})();
     var msgs = list.length? list : SEED;
     var full=msgs.concat(msgs); full.forEach(function(m){ A.appendChild(chip(m)); });
     var rev=msgs.slice().reverse(); var fullR=rev.concat(rev); fullR.forEach(function(m){ B.appendChild(chip(m)); });
+    bindWallPause(A,B);
   }
+  var wallBound=false;
+  function bindWallPause(A,B){
+    if(wallBound) return; wallBound=true;
+    var host=document.getElementById('celebrate');
+    function setPaused(on){ A.classList.toggle('paused',on); B.classList.toggle('paused',on); }
+    host.addEventListener('pointerdown',function(){ setPaused(true); });
+    ['pointerup','pointercancel','pointerleave'].forEach(function(ev){ host.addEventListener(ev,function(){ setPaused(false); }); });
+  }
+  var lastWall='';
   function watchWall(){
     db.collection('celebrations').orderBy('createdAt','desc').limit(200).onSnapshot(function(snap){
       var list=[]; snap.forEach(function(dd){ var x=dd.data(); if(x&&x.text) list.push({a:x.author||'익명', t:x.text}); });
+      var key=JSON.stringify(list); if(key===lastWall) return; lastWall=key;
       renderWall(list);
     }, function(e){ console.warn('wall',e&&e.code); renderWall([]); });
   }
