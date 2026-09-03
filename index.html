@@ -737,6 +737,22 @@
   #hundred-banner .hb-text b{font-weight:800;color:var(--yellow,#E2DB14)}
   #hundred-banner .hb-x{flex:none;background:none;border:none;color:var(--text-secondary,#9AA0A6);font-size:14px;cursor:pointer;padding:2px 4px;line-height:1}
 </style>
+<style id="notice-css">
+  .notice-bell{position:relative;background:none;border:none;padding:5px;cursor:pointer;color:var(--text-secondary,#9AA0A6);display:flex;align-items:center;justify-content:center;line-height:0}
+  .notice-bell svg{width:24px;height:24px}
+  .notice-dot{position:absolute;top:2px;right:2px;width:9px;height:9px;border-radius:50%;background:#FF3B30;border:2px solid var(--bg,#fff)}
+  .notice-modal{max-height:84vh;overflow-y:auto}
+  .notice-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+  .notice-head h2{font-size:19px;font-weight:800;color:var(--text)}
+  .nt-write-btn{background:var(--ink,#141413);color:#fff;border:none;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+  .nt-form{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:16px}
+  .nt-item{position:relative;border:1px solid var(--border);border-radius:14px;padding:14px 15px;margin-bottom:10px;background:var(--surface)}
+  .nt-item .nt-t{font-size:15px;font-weight:800;color:var(--text);margin-bottom:4px;padding-right:36px}
+  .nt-item .nt-meta{font-size:11.5px;color:var(--muted);margin-bottom:9px}
+  .nt-item .nt-c{font-size:13.5px;line-height:1.55;color:var(--text);white-space:pre-wrap;word-break:break-word}
+  .nt-item .nt-del{position:absolute;top:12px;right:14px;background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer}
+  .nt-empty{text-align:center;color:var(--muted);padding:34px 0;font-size:13.5px}
+</style>
 </head>
 <body>
 
@@ -769,6 +785,10 @@
     <div style="display:flex; align-items:center; gap:9px;">
       <img src="paprika_mark.png" alt="paprika" class="brand-img">
     </div>
+    <button class="notice-bell" id="notice-bell" onclick="openNoticeModal()" aria-label="공지사항">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>
+      <span class="notice-dot" id="notice-dot" hidden></span>
+    </button>
   </div>
 </div>
 
@@ -814,6 +834,34 @@
 
 <!-- FAB -->
 <button class="fab" onclick="openAddModal()" title="새 런 추가">＋</button>
+
+<!-- NOTICE MODAL (공지사항 CMS) -->
+<div class="modal-overlay" id="notice-modal-overlay" onclick="handleOverlayClick(event, 'notice-modal-overlay')">
+  <div class="modal notice-modal">
+    <div class="modal-handle" onclick="closeModal('notice-modal-overlay')"></div>
+    <div class="notice-head">
+      <h2>📢 공지사항</h2>
+      <button class="nt-write-btn" id="nt-write-btn" onclick="noticeWriteToggle()">글쓰기</button>
+    </div>
+    <div class="nt-form" id="nt-form" style="display:none;">
+      <div id="nt-pw-wrap">
+        <label class="form-label">운영진 확인</label>
+        <input type="password" class="form-input" id="nt-pw" placeholder="운영진 패스워드">
+        <button class="btn-primary" style="margin-top:10px;" onclick="noticeUnlock()">확인</button>
+      </div>
+      <div id="nt-edit-wrap" style="display:none;">
+        <label class="form-label">작성자</label>
+        <select class="form-input" id="nt-author"></select>
+        <label class="form-label" style="margin-top:12px;">제목</label>
+        <input type="text" class="form-input" id="nt-title" maxlength="80" placeholder="공지 제목">
+        <label class="form-label" style="margin-top:12px;">내용</label>
+        <textarea class="form-input" id="nt-content" rows="4" maxlength="2000" placeholder="공지 내용을 입력하세요" style="resize:none; line-height:1.5;"></textarea>
+        <button class="btn-primary" style="margin-top:12px;" id="nt-submit" onclick="submitNotice()">등록</button>
+      </div>
+    </div>
+    <div id="notice-list"></div>
+  </div>
+</div>
 
 <!-- BOTTOM NAV (파프리카 v1.0) -->
 <nav class="bottom-nav">
@@ -1320,7 +1368,7 @@ window.addEventListener('DOMContentLoaded', () => {
   // 보안 규칙이 인증을 요구하므로, 백그라운드 익명 로그인 후 데이터에 연결한다.
   // 사용자는 로그인 화면을 보지 않는다.
   auth.signInAnonymously()
-    .then(startRunsListener)
+    .then(() => { startRunsListener(); startNoticesListener(); })
     .catch(err => {
       console.error('익명 인증 실패:', err);
       showToast('접속에 실패했어요. 브라우저의 쿠키/저장소 차단을 해제하고 새로고침해주세요.', 5000);
@@ -2613,6 +2661,99 @@ function updateDescCount() {
     if(!off && today()<=UNTIL){ var el=document.getElementById('hundred-banner'); if(el) el.classList.add('show'); }
   }catch(e){}
 })();
+</script>
+<script>
+// ─── 공지사항 (운영진 CMS) ─────────────────────────────────────────
+const NOTICE_ADMINS = ['콜라','딩딩','방랑','런린'];
+const NOTICE_ADMIN_PW = 'pprk-admin';
+let _notices = [];
+let _noticeAdmin = false;
+try { _noticeAdmin = localStorage.getItem('rc_notice_admin') === '1'; } catch (e) {}
+
+function startNoticesListener() {
+  db.collection('notices').orderBy('createdAt', 'desc').limit(100).onSnapshot(function (snap) {
+    _notices = snap.docs.map(function (d) {
+      var x = d.data();
+      return { id: d.id, title: x.title || '', content: x.content || '', author: x.author || '',
+        ts: (x.createdAt && x.createdAt.toMillis) ? x.createdAt.toMillis() : 0 };
+    });
+    updateNoticeDot();
+    var ov = document.getElementById('notice-modal-overlay');
+    if (ov && ov.classList.contains('open')) renderNotices();
+  }, function (e) { console.warn('notices', e && e.code); });
+}
+function latestNoticeTs() { return _notices.length ? Math.max.apply(null, _notices.map(function (n) { return n.ts || 0; })) : 0; }
+function updateNoticeDot() {
+  var seen = 0; try { seen = parseInt(localStorage.getItem('rc_notice_seen') || '0', 10) || 0; } catch (e) {}
+  var dot = document.getElementById('notice-dot');
+  if (dot) dot.hidden = !(_notices.length > 0 && latestNoticeTs() > seen);
+}
+function openNoticeModal() {
+  openModal('notice-modal-overlay');
+  renderNotices();
+  try { localStorage.setItem('rc_notice_seen', String(latestNoticeTs())); } catch (e) {}
+  updateNoticeDot();
+}
+function fmtNoticeDate(ms) {
+  if (!ms) return '방금'; var d = new Date(ms); var pad = function (n) { return String(n).padStart(2, '0'); };
+  return d.getFullYear() + '.' + pad(d.getMonth() + 1) + '.' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+}
+function renderNotices() {
+  var el = document.getElementById('notice-list'); if (!el) return;
+  if (!_notices.length) { el.innerHTML = '<div class="nt-empty">아직 공지가 없어요 📭</div>'; return; }
+  el.innerHTML = _notices.map(function (n) {
+    var del = _noticeAdmin ? '<button class="nt-del" onclick="deleteNotice(\'' + n.id + '\')">삭제</button>' : '';
+    return '<div class="nt-item">' + del +
+      '<div class="nt-t">' + esc(n.title) + '</div>' +
+      '<div class="nt-meta">' + esc(n.author) + ' · ' + fmtNoticeDate(n.ts) + '</div>' +
+      '<div class="nt-c">' + esc(n.content) + '</div></div>';
+  }).join('');
+}
+function noticeWriteToggle() {
+  var f = document.getElementById('nt-form');
+  var show = f.style.display === 'none';
+  f.style.display = show ? '' : 'none';
+  if (show) {
+    document.getElementById('nt-pw-wrap').style.display = _noticeAdmin ? 'none' : '';
+    document.getElementById('nt-edit-wrap').style.display = _noticeAdmin ? '' : 'none';
+    if (_noticeAdmin) fillNoticeAuthors();
+  }
+}
+function fillNoticeAuthors() {
+  var s = document.getElementById('nt-author'); if (s.options.length) return;
+  NOTICE_ADMINS.forEach(function (a) { var o = document.createElement('option'); o.value = a; o.textContent = a; s.appendChild(o); });
+  var me = ''; try { me = localStorage.getItem('rc_nickname') || ''; } catch (e) {}
+  if (NOTICE_ADMINS.indexOf(me) >= 0) s.value = me;
+}
+function noticeUnlock() {
+  var pw = document.getElementById('nt-pw').value;
+  if (pw !== NOTICE_ADMIN_PW) { showToast('패스워드가 달라요'); return; }
+  _noticeAdmin = true; try { localStorage.setItem('rc_notice_admin', '1'); } catch (e) {}
+  document.getElementById('nt-pw').value = '';
+  document.getElementById('nt-pw-wrap').style.display = 'none';
+  document.getElementById('nt-edit-wrap').style.display = '';
+  fillNoticeAuthors(); renderNotices();
+}
+function submitNotice() {
+  var title = document.getElementById('nt-title').value.trim();
+  var content = document.getElementById('nt-content').value.trim();
+  var author = document.getElementById('nt-author').value;
+  if (!title || !content) { showToast('제목과 내용을 입력해주세요'); return; }
+  if (NOTICE_ADMINS.indexOf(author) < 0) { showToast('작성자를 선택해주세요'); return; }
+  var btn = document.getElementById('nt-submit'); btn.disabled = true; btn.textContent = '등록 중...';
+  db.collection('notices').add({ title: title.slice(0, 80), content: content.slice(0, 2000), author: author, createdAt: firebase.firestore.FieldValue.serverTimestamp() })
+    .then(function () {
+      document.getElementById('nt-title').value = ''; document.getElementById('nt-content').value = '';
+      document.getElementById('nt-form').style.display = 'none'; btn.disabled = false; btn.textContent = '등록';
+      try { localStorage.setItem('rc_notice_seen', String(Date.now() + 5000)); } catch (e) {}
+      showToast('공지를 등록했어요 📢');
+    })
+    .catch(function (e) { console.error(e); btn.disabled = false; btn.textContent = '등록'; showToast('등록 실패 — 규칙/네트워크를 확인해주세요'); });
+}
+function deleteNotice(id) {
+  if (!confirm('이 공지를 삭제할까요?')) return;
+  db.collection('notices').doc(id).delete().then(function () { showToast('삭제했어요'); }).catch(function (e) { showToast('삭제 실패'); });
+}
 </script>
 </body>
 </html>
