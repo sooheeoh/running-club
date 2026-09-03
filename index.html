@@ -1585,7 +1585,7 @@ function buildRunCard(run) {
 
   let pill = '런', pillClass = '';
   if (run.type === 'special') pill = '그외';
-  else if (run.type === 'race') { const L = raceDistLabels(run); pill = L.length <= 2 ? (L.join('·') || '대회') : (L.length + '종'); pillClass = ' race'; }
+  else if (run.type === 'race') { const L = raceDistLabels(run); pill = L.join('·') || '대회'; pillClass = ' race'; }
   else if (completed) { pill = '완료'; pillClass = ' done'; }
   else if (run.distance) pill = `${run.distance}km`;
 
