@@ -138,6 +138,7 @@
   .run-dot.past { background: #D1D5DB; }
   .run-dot.completed { background: #10B981; }
   .run-dot.special { background: #8B5CF6; }
+  .run-dot.race { background: #3B82F6; }
   .badge-completed { background: #D1FAE5; color: #065F46; }
   .badge-special { background: #EDE9FE; color: #6D28D9; }
 
@@ -505,6 +506,7 @@
   .run-dot.upcoming { background: var(--yellow); }
   .run-dot.completed { background: var(--green); }
   .run-dot.special   { background: var(--green); }
+  .run-dot.race      { background: #3B82F6; }
   .run-dot.past      { background: #D6D6D0; }
 
   /* 컴팩트 일정 카드 (8a) */
@@ -639,6 +641,9 @@
   .dt-pill { position: absolute; left: 20px; bottom: 14px; z-index: 1; font-size: 10px; font-weight: 800; padding: 6px 12px; border-radius: 999px; }
   .dt-pill.open { background: var(--yellow); color: var(--ink); }
   .dt-pill.done, .dt-pill.special { background: var(--green); color: #fff; }
+  .dt-pill.race { background: #3B82F6; color: #fff; }
+  .rc-pill.race { background: #3B82F6; color: #fff; }
+  .run-card.ptype-race .rc-day { color: #3B82F6; }
   .dt-main { padding-top: 16px; }
   .dt-title { font-size: 22px; font-weight: 800; letter-spacing: -.01em; line-height: 1.25; }
   .dt-sub { font-size: 12.5px; font-weight: 600; color: var(--text-secondary); margin-top: 6px; }
@@ -871,6 +876,7 @@
       <label class="form-label">종류</label>
       <div class="analytics-tab-row" style="margin-bottom:0;">
         <button type="button" class="analytics-tab active" id="type-btn-run" onclick="setFormType('run')">러닝</button>
+        <button type="button" class="analytics-tab" id="type-btn-race" onclick="setFormType('race')">대회</button>
         <button type="button" class="analytics-tab" id="type-btn-special" onclick="setFormType('special')">그외</button>
       </div>
     </div>
@@ -895,6 +901,12 @@
     <div class="modal-section" id="section-distance">
       <label class="form-label" id="f-distance-label">예상 거리 (km)</label>
       <input type="number" class="form-input" id="f-distance" placeholder="5" min="0" step="0.1">
+      <select class="form-input" id="f-race-dist" style="display:none;">
+        <option value="5">5K</option>
+        <option value="10">10K</option>
+        <option value="21.0975">하프</option>
+        <option value="42.195">풀</option>
+      </select>
     </div>
     <div class="modal-section" id="section-courseurl">
       <label class="form-label">코스 URL (선택, 링크만)</label>
@@ -1189,7 +1201,7 @@ function renderTicker() {
   el.classList.remove('empty');
   const diff = Math.round((new Date(next.date+'T00:00:00') - new Date(today+'T00:00:00')) / 86400000);
   const dday = diff <= 0 ? 'D-DAY' : `D-${diff}`;
-  const label = next.type === 'special' ? '다음 일정' : '다음 런';
+  const label = next.type === 'race' ? '다음 대회' : next.type === 'special' ? '다음 일정' : '다음 런';
   const sub = [next.title, next.time].filter(Boolean).join(' · ');
   el.innerHTML = `<span class="nb-dot"></span><span class="nb-label">${label}</span>` +
     `<span class="nb-title">${esc(sub)}</span><span class="nb-dday">${dday}</span>`;
@@ -1232,19 +1244,32 @@ let editingRunId = null;
 let formType = 'run'; // 'run' | 'special' — 러닝 vs 특별 원데이 세션
 
 // 추가/수정 폼의 종류 토글 ('그외'는 거리·코스URL 항목을 숨긴다)
+// 대회 거리(km)를 라벨로 표시 (5→5K, 10→10K, 하프≈21.0975, 풀≈42.195)
+function raceDistLabel(km) {
+  km = parseFloat(km) || 0;
+  if (km >= 42) return '풀';
+  if (km >= 21 && km < 22) return '하프';
+  if (km === 10) return '10K';
+  if (km === 5) return '5K';
+  return km + 'km';
+}
 function setFormType(t) {
   formType = t;
-  const other = t === 'special';
-  document.getElementById('type-btn-run').classList.toggle('active', !other);
-  document.getElementById('type-btn-special').classList.toggle('active', other);
-  document.getElementById('f-title-label').textContent = other ? '활동명 *' : '런 제목 / 별칭 *';
-  document.getElementById('section-distance').style.display = other ? 'none' : '';
-  document.getElementById('section-courseurl').style.display = other ? 'none' : '';
-  // 예시 플레이스홀더는 러닝 전용이므로 '그외'에선 비운다
-  document.getElementById('f-title').placeholder = other ? '' : '예: 어린이대공원 붕어빵런';
-  document.getElementById('f-location').placeholder = other ? '' : '예: 어린이대공원 정문 앞';
-  document.getElementById('f-description').placeholder = other ? '' : '예: 이번 런은 슬로우로 진행합니다. 페이스는 7분 정도로 하겠습니다!';
-  if (other) {
+  const isSpecial = t === 'special', isRace = t === 'race', isRun = t === 'run';
+  document.getElementById('type-btn-run').classList.toggle('active', isRun);
+  document.getElementById('type-btn-race').classList.toggle('active', isRace);
+  document.getElementById('type-btn-special').classList.toggle('active', isSpecial);
+  document.getElementById('f-title-label').textContent = isSpecial ? '활동명 *' : isRace ? '대회명 *' : '런 제목 / 별칭 *';
+  document.getElementById('section-distance').style.display = isSpecial ? 'none' : '';
+  document.getElementById('section-courseurl').style.display = isSpecial ? 'none' : '';
+  // 거리 입력: 대회는 셀렉트(5K/10K/하프/풀), 러닝은 숫자 입력
+  document.getElementById('f-distance').style.display = isRace ? 'none' : '';
+  document.getElementById('f-race-dist').style.display = isRace ? '' : 'none';
+  document.getElementById('f-distance-label').textContent = isRace ? '거리' : '예상 거리 (km)';
+  document.getElementById('f-title').placeholder = isSpecial ? '' : isRace ? '예: JTBC 서울마라톤' : '예: 어린이대공원 붕어빵런';
+  document.getElementById('f-location').placeholder = isSpecial ? '' : isRace ? '예: 상암 월드컵공원' : '예: 어린이대공원 정문 앞';
+  document.getElementById('f-description').placeholder = isSpecial ? '' : isRace ? '예: 목표 기록·집결 시간 등' : '예: 이번 런은 슬로우로 진행합니다. 페이스는 7분 정도로 하겠습니다!';
+  if (isSpecial) {
     document.getElementById('f-distance').value = '';
     document.getElementById('f-course-url').value = '';
   }
@@ -1469,8 +1494,8 @@ function renderCalendar() {
     const dots = dayRuns.map(r => {
       const isPast = r.date < todayStr();
       const comp = isCompleted(r);
-      const cls = r.type === 'special' ? 'special' : comp ? 'completed' : isPast ? 'past' : 'upcoming';
-      return `<div class="run-dot ${cls}" title="${r.type === 'special' ? '특별 세션' : comp ? '완료' : ''}"></div>`;
+      const cls = r.type === 'special' ? 'special' : r.type === 'race' ? 'race' : comp ? 'completed' : isPast ? 'past' : 'upcoming';
+      return `<div class="run-dot ${cls}" title="${r.type === 'special' ? '특별 세션' : r.type === 'race' ? '대회' : comp ? '완료' : ''}"></div>`;
     }).join('');
     grid.innerHTML += `<div class="${cls}" onclick="filterCalendarByDate('${dateStr}')"><span class="cal-num">${d}</span><div class="run-dots">${dots}</div></div>`;
   }
@@ -1541,7 +1566,7 @@ function buildRunCard(run) {
   const completed = isCompleted(run);
   const isPast = run.date < today || completed;
   const card = document.createElement('div');
-  card.className = `run-card ${isPast ? 'past' : 'upcoming'} ${run.type === 'special' ? 'ptype-special' : 'ptype-run'}`;
+  card.className = `run-card ${isPast ? 'past' : 'upcoming'} ${run.type === 'special' ? 'ptype-special' : run.type === 'race' ? 'ptype-race' : 'ptype-run'}`;
   card.onclick = () => openDetail(run);
 
   const d = new Date(run.date + 'T00:00:00');
@@ -1551,6 +1576,7 @@ function buildRunCard(run) {
 
   let pill = '런', pillClass = '';
   if (run.type === 'special') pill = '그외';
+  else if (run.type === 'race') { pill = raceDistLabel(run.distance); pillClass = ' race'; }
   else if (completed) { pill = '완료'; pillClass = ' done'; }
   else if (run.distance) pill = `${run.distance}km`;
 
@@ -1573,12 +1599,14 @@ async function openDetailById(id) {
 
 async function openDetail(run) {
   const isSpecial = run.type === 'special';
+  const isRace = run.type === 'race';
   const completed = isCompleted(run);
   const today = todayStr();
   const parts = run.participants || [];
 
   let pillTxt = '모집중', pillCls = 'open';
   if (isSpecial) { pillTxt = '그외'; pillCls = 'special'; }
+  else if (isRace) { pillTxt = '대회'; pillCls = 'race'; }
   else if (completed) { pillTxt = '완료'; pillCls = 'done'; }
 
   let stat3lbl = '디데이', stat3val;
@@ -1596,7 +1624,7 @@ async function openDetail(run) {
       <div class="dt-title">${esc(run.title || '제목 없음')}</div>
       <div class="dt-sub">${esc(subLine)}</div>
       <div class="dt-stats">
-        <div class="dt-stat"><div class="dt-num">${run.distance ? run.distance : '–'}<small>${run.distance ? 'km' : ''}</small></div><div class="dt-lbl">거리</div></div>
+        <div class="dt-stat"><div class="dt-num">${run.distance ? (isRace ? raceDistLabel(run.distance) : run.distance) : '–'}<small>${run.distance && !isRace ? 'km' : ''}</small></div><div class="dt-lbl">거리</div></div>
         <div class="dt-stat"><div class="dt-num">${parts.length}<small>명</small></div><div class="dt-lbl">참여</div></div>
         <div class="dt-stat"><div class="dt-num">${stat3val}</div><div class="dt-lbl">${stat3lbl}</div></div>
       </div>
@@ -1732,7 +1760,11 @@ function openEditModal(id) {
   document.getElementById('f-course-url').value = run.courseUrl || '';
   document.getElementById('f-description').value = run.description || '';
   updateDescCount();
-  setFormType(run.type === 'special' ? 'special' : 'run');
+  setFormType(run.type === 'special' ? 'special' : run.type === 'race' ? 'race' : 'run');
+  if (run.type === 'race') {
+    const km = parseFloat(run.distance) || 0;
+    document.getElementById('f-race-dist').value = km >= 42 ? '42.195' : (km >= 21 ? '21.0975' : (km === 10 ? '10' : '5'));
+  }
   document.getElementById('save-btn').textContent = '수정 저장';
   document.getElementById('edit-delete-btn').style.display = 'block';
 
@@ -1766,9 +1798,11 @@ function isLinkLike(raw) {
 async function saveRun() {
   const title = document.getElementById('f-title').value.trim();
   const date = document.getElementById('f-date').value;
-  const distanceVal = parseFloat(document.getElementById('f-distance').value);
+  const distanceVal = formType === 'race'
+    ? parseFloat(document.getElementById('f-race-dist').value)
+    : parseFloat(document.getElementById('f-distance').value);
   if (!title || !date) { showToast('제목과 날짜는 필수예요!'); return; }
-  if (formType !== 'special' && (!distanceVal || distanceVal <= 0)) { showToast('거리를 입력해주세요!'); return; }
+  if (formType !== 'special' && (!distanceVal || distanceVal <= 0)) { showToast(formType === 'race' ? '거리를 선택해주세요!' : '거리를 입력해주세요!'); return; }
   const courseVal = document.getElementById('f-course-url').value.trim();
   if (courseVal && !isLinkLike(courseVal)) { showToast('코스는 링크(URL)만 넣어주세요 🔗'); return; }
 
@@ -1794,18 +1828,18 @@ async function saveRun() {
       date,
       time: document.getElementById('f-time').value,
       location: document.getElementById('f-location').value.trim(),
-      distance: parseFloat(document.getElementById('f-distance').value) || null,
+      distance: distanceVal || null,
       courseUrl: document.getElementById('f-course-url').value.trim(),
       description: document.getElementById('f-description').value.trim(),
       participants: formParticipants,
       photos: allPhotos,
-      type: formType === 'special' ? 'special' : null,
+      type: formType === 'run' ? null : formType,
     };
     Object.keys(data).forEach(k => (data[k] === null || data[k] === '') && delete data[k]);
 
     if (editingRunId) {
       // 특별 세션 → 일반 런으로 바꾼 경우 기존 type 필드 제거
-      if (formType !== 'special') data.type = firebase.firestore.FieldValue.delete();
+      if (formType === 'run') data.type = firebase.firestore.FieldValue.delete();
       await db.collection('runs').doc(editingRunId).update(data);
       showToast('런이 수정됐어요 ✅');
       closeModal('add-modal-overlay');
