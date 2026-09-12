@@ -1325,7 +1325,16 @@ function setFormType(t) {
   }
 }
 let existingPhotos = [];
+// 기기에 저장된 닉네임 일괄 변경 맵 (개명 시 여기에 '옛닉':'새닉' 추가).
+// MY에 닉네임 변경 UI가 없으므로, 앱 로딩 시 저장된 닉네임을 자동으로 새 닉으로 바꾼다.
+const NICK_MIGRATE = { '연': '연두' };
 let myNickname = localStorage.getItem('rc_nickname') || '';
+let _nickMigratedTo = '';
+if (myNickname && NICK_MIGRATE[myNickname]) {
+  _nickMigratedTo = NICK_MIGRATE[myNickname];
+  myNickname = _nickMigratedTo;
+  try { localStorage.setItem('rc_nickname', myNickname); } catch (e) {}
+}
 let pendingJoinRunId = null;
 let pendingNicknameEdit = false; // MY에서 닉네임 변경 중이면 확인 후 폼 대신 MY 갱신
 
@@ -1342,6 +1351,7 @@ window.addEventListener('DOMContentLoaded', () => {
   const now = new Date();
   calYear = now.getFullYear();
   calMonth = now.getMonth();
+  if (_nickMigratedTo) setTimeout(() => { try { showToast('닉네임이 \'' + _nickMigratedTo + '\'(으)로 변경되었어요'); } catch (e) {} }, 900);
 
   const pad = n => String(n).padStart(2, '0');
   document.getElementById('f-date').value = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
