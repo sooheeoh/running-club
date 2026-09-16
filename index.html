@@ -2295,9 +2295,16 @@ function buildLeaderboard(filteredRuns) {
       stats[p].distance += parseFloat(run.distance) || 0;
     });
   });
-  return Object.entries(stats)
+  const sorted = Object.entries(stats)
     .map(([name, s]) => ({ name, ...s }))
-    .sort((a, b) => b.count - a.count || b.distance - a.distance);
+    // 1) 횟수 많은 순 → 2) 총 거리 긴 순 → 3) 이름 가나다순
+    .sort((a, b) => b.count - a.count || b.distance - a.distance || a.name.localeCompare(b.name, 'ko'));
+  // 공동 등수: 횟수·거리가 모두 같으면 같은 순위(표준 경쟁 순위, 1·2·2·4)
+  sorted.forEach((e, i) => {
+    const prev = sorted[i - 1];
+    e.place = (prev && prev.count === e.count && prev.distance === e.distance) ? prev.place : i + 1;
+  });
+  return sorted;
 }
 
 // ─── 탭 전환 & 랭킹 화면 (파프리카 v1.0) ─────────────────────────
@@ -2466,20 +2473,22 @@ function renderRanking() {
     const s = rankAv(place);
     return `<div class="${cls}" style="background:${s.bg};color:${s.color}">${esc((name || '?').charAt(0))}</div>`;
   };
-  const pcol = (entry, place) => {
-    if (!entry) return `<div class="pcol p${place}"></div>`;
+  const pcol = (entry, slot) => {
+    if (!entry) return `<div class="pcol p${slot}"></div>`;
+    const place = entry.place;
     const crown = place === 1 ? `<div class="pcrown">👑</div>` : '';
-    return `<div class="pcol p${place}">${crown}${av(entry.name, 'pav', place)}` +
+    return `<div class="pcol p${slot}">${crown}${av(entry.name, 'pav', place)}` +
       `<div class="pname">${esc(entry.name)}</div><div class="pkm">${entry.count}회</div>` +
       `<div class="pdist">${fmtKm(entry.distance)}km</div>` +
       `<div class="pbar">${place}</div></div>`;
   };
   const podium = `<div class="podium">${pcol(lb[1], 2)}${pcol(lb[0], 1)}${pcol(lb[2], 3)}</div>`;
 
-  const rows = lb.slice(3).map((e, i) => {
+  const rows = lb.slice(3).map((e) => {
+    const place = e.place;
     const me = myNickname && e.name === myNickname ? ' me' : '';
     const tag = me ? `<span class="me-tag">나</span>` : '';
-    return `<div class="rrow${me}"><div class="rr-rank">${i + 4}</div>${av(e.name, 'rr-av', i + 4)}` +
+    return `<div class="rrow${me}"><div class="rr-rank">${place}</div>${av(e.name, 'rr-av', place)}` +
       `<div class="rr-name">${esc(e.name)}${tag}</div>` +
       `<div class="rr-val"><div class="rr-km">${e.count}<small>회</small></div><div class="rr-cnt">${fmtKm(e.distance)}km</div></div></div>`;
   }).join('');
@@ -2501,10 +2510,11 @@ function renderAnalyticsContent() {
   if (leaderboard.length === 0) {
     lbHtml = `<div style="text-align:center; color:var(--text-secondary); padding:28px 0; font-size:14px;">완료된 러닝 기록이 없어요</div>`;
   } else {
-    lbHtml = leaderboard.map((entry, i) => {
-      const rankIcon = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `<span style="font-size:13px;font-weight:700;color:var(--text-secondary)">${i+1}</span>`;
+    lbHtml = leaderboard.map((entry) => {
+      const place = entry.place;
+      const rankIcon = place === 1 ? '🥇' : place === 2 ? '🥈' : place === 3 ? '🥉' : `<span style="font-size:13px;font-weight:700;color:var(--text-secondary)">${place}</span>`;
       const labels = ['광인', '집요', '신예'];
-      const legendBadge = i < 3 ? `<span class="badge-legend">${labels[i]}</span>` : '';
+      const legendBadge = place <= 3 ? `<span class="badge-legend">${labels[place - 1]}</span>` : '';
       return `
         <div class="lb-row">
           <div class="lb-rank">${rankIcon}</div>
