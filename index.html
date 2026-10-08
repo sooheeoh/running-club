@@ -671,16 +671,6 @@
   .dt-avx { position: absolute; top: -4px; right: -4px; width: 18px; height: 18px; border-radius: 50%; border: none; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.2); color: #6E6E68; font-size: 12px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; }
   .dt-avname { font-size: 11px; font-weight: 600; color: #4A4A44; }
   .dt-invite { width: 46px; height: 46px; border-radius: 50%; border: 1.5px dashed var(--border); background: none; color: var(--muted); font-size: 24px; font-weight: 300; cursor: pointer; }
-  .dt-log { margin-top: 16px; }
-  .dt-log > summary { cursor: pointer; font-size: 13px; font-weight: 800; color: var(--text-secondary); list-style: none; display: flex; align-items: center; gap: 6px; }
-  .dt-log > summary::-webkit-details-marker { display: none; }
-  .dt-log-n { background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 1px 8px; font-size: 11px; color: var(--text-secondary); }
-  .dt-log-list { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
-  .dt-log-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; font-size: 12.5px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
-  .dt-log-who { font-weight: 800; color: var(--text); }
-  .dt-log-when { color: var(--muted); font-variant-numeric: tabular-nums; }
-  .dt-log-what { color: var(--text-secondary); width: 100%; }
-  .dt-log-note { margin-top: 9px; font-size: 11px; color: var(--muted); }
   .dt-actions { display: flex; gap: 10px; margin-top: 22px; }
   .dt-join { flex: 1; height: 52px; border-radius: 16px; border: none; background: var(--ink); color: var(--yellow); font-size: 16px; font-weight: 800; cursor: pointer; font-family: inherit; }
   .dt-join.out { background: var(--surface); color: var(--text-secondary); }
@@ -1681,15 +1671,6 @@ async function openDetail(run) {
   const joinBtn = iAmIn
     ? `<button class="dt-join out" onclick="removeParticipantFromRun('${run.id}','${esc(myNickname)}')">참여 취소</button>`
     : `<button class="dt-join" onclick="joinRun('${run.id}')">참여하기</button>`;
-  // 수정 내역 (A안 로그) — 있으면 접이식으로 노출
-  if (Array.isArray(run.history) && run.history.length) {
-    const fmt = ms => { const d = new Date(ms); const p = n => String(n).padStart(2,'0'); return `${d.getFullYear()}.${p(d.getMonth()+1)}.${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`; };
-    const rows = [...run.history].sort((a,b)=>(b.at||0)-(a.at||0)).map(h =>
-      `<div class="dt-log-row"><span class="dt-log-who">${esc(h.by||'익명')}</span><span class="dt-log-when">${fmt(h.at)}</span><span class="dt-log-what">${esc((h.fields||[]).join(', '))} 수정</span></div>`
-    ).join('');
-    body.innerHTML += `<details class="dt-block dt-log"><summary>✏️ 수정 내역 <span class="dt-log-n">${run.history.length}</span></summary><div class="dt-log-list">${rows}</div><div class="dt-log-note">닉네임은 기기에 저장된 값이라 참고용이에요.</div></details>`;
-  }
-
   body.innerHTML += `<div class="dt-actions">${joinBtn}<button class="dt-edit" onclick="closeModal('detail-modal-overlay');openEditModal('${run.id}')">수정</button></div>`;
 
   // 날씨 — '그외'는 표시 안 함
