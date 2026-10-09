@@ -1836,27 +1836,12 @@ async function saveRun() {
       photos: allPhotos,
       type: formType === 'run' ? null : formType,
     };
-    // 수정 로그(A안): 편집 시 바뀐 항목을 history[]에 기록.
-    // 주의 — 작성자(by)는 기기에 저장된 닉네임(자유 텍스트)이라 검증된 신원이 아니라 '참고용'이다.
-    let _historyEntry = null;
-    if (editingRunId) {
-      const orig = (runs || []).find(r => r.id === editingRunId) || {};
-      const LBL = { title:'제목', date:'날짜', time:'시간', location:'장소', distance:'거리', distances:'거리', courseUrl:'코스', description:'설명', participants:'참가자', photos:'사진', type:'종류' };
-      const norm = v => Array.isArray(v) ? JSON.stringify(v) : (v == null || v === '' ? '' : String(v));
-      const seen = new Set(), changed = [];
-      ['title','date','time','location','distance','distances','courseUrl','description','participants','photos','type'].forEach(f => {
-        if (norm(data[f]) !== norm(orig[f])) { const l = LBL[f]; if (l && !seen.has(l)) { seen.add(l); changed.push(l); } }
-      });
-      if (changed.length) _historyEntry = { by: (myNickname || '익명'), at: Date.now(), fields: changed };
-    }
-
     Object.keys(data).forEach(k => (data[k] === null || data[k] === '') && delete data[k]);
 
     if (editingRunId) {
       // 특별 세션 → 일반 런으로 바꾼 경우 기존 type 필드 제거
       if (formType === 'run') data.type = firebase.firestore.FieldValue.delete();
       if (formType !== 'race') data.distances = firebase.firestore.FieldValue.delete();
-      if (_historyEntry) data.history = firebase.firestore.FieldValue.arrayUnion(_historyEntry);
       await db.collection('runs').doc(editingRunId).update(data);
       showToast('런이 수정됐어요 ✅');
       closeModal('add-modal-overlay');
