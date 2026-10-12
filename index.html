@@ -1269,7 +1269,7 @@ function setFormType(t) {
 let existingPhotos = [];
 // 기기에 저장된 닉네임 일괄 변경 맵 (개명 시 여기에 '옛닉':'새닉' 추가).
 // MY에 닉네임 변경 UI가 없으므로, 앱 로딩 시 저장된 닉네임을 자동으로 새 닉으로 바꾼다.
-const NICK_MIGRATE = { '연': '연두' };
+const NICK_MIGRATE = { '연': '연두', '며': '별' };
 let myNickname = localStorage.getItem('rc_nickname') || '';
 let _nickMigratedTo = '';
 if (myNickname && NICK_MIGRATE[myNickname]) {
