@@ -423,12 +423,16 @@
   .neon-track {
     display: inline-flex;
     gap: 0;
+    /* 웹폰트(Archivo Black)가 준비되기 전엔 글자를 숨겨 폰트 스왑으로 크기가 '왔다갔다'하는 현상 방지 */
+    opacity: 0;
+    transition: opacity .25s ease;
     animation: neon-scroll 60s linear infinite;
     /* GPU 합성 레이어로 고정해 모바일에서 렌더링이 떨어지지 않게 */
     will-change: transform;
     -webkit-backface-visibility: hidden;
     backface-visibility: hidden;
   }
+  .neon-ticker.fonts-ready .neon-track { opacity: 1; }
   .neon-track:hover { animation-play-state: paused; }
   @keyframes neon-scroll {
     0%   { transform: translate3d(0, 0, 0); }
@@ -1155,10 +1159,14 @@ function renderNeonTicker() {
 
 // 웹폰트 로딩이 끝나면 정확한 폭으로 다시 계산한다(첫 로딩 시 폭주 방지).
 let _fontsReady = false;
+function _revealTicker() { const t = document.getElementById('neon-ticker'); if (t) t.classList.add('fonts-ready'); }
 if (document.fonts && document.fonts.ready) {
-  document.fonts.ready.then(() => { _fontsReady = true; _tickerLast = ''; renderNeonTicker(); });
+  document.fonts.ready.then(() => { _fontsReady = true; _tickerLast = ''; renderNeonTicker(); _revealTicker(); });
+  // 폰트 로딩이 끝내 실패해도 전광판이 영원히 숨지 않도록 안전장치
+  setTimeout(() => { _fontsReady = true; _tickerLast = ''; renderNeonTicker(); _revealTicker(); }, 2000);
 } else {
   _fontsReady = true;
+  _revealTicker();
 }
 
 // 창 크기가 바뀌면 폭이 달라지므로 다시 계산해 속도를 일정하게 유지한다.
