@@ -735,12 +735,10 @@
   .dt-avx { background: var(--card); color: var(--text-secondary); box-shadow: none; border: 1px solid var(--border); }
   .dt-edit { background: var(--surface); border-color: var(--border); color: var(--text); }
 
-  /* 아바타(블롭/사진) */
+  /* 아바타(블롭) */
   .av-box { background: transparent !important; overflow: visible; }
   .av-svg { width: 100%; height: 100%; display: block; }
-  .av-photo { width: 100%; height: 100%; display: block; border-radius: 50%; object-fit: cover; }
   .pcol .pav.av-box { background: transparent !important; }
-  .pcol .pav.av-box .av-photo { width: 100%; height: 100%; }
   /* 프로필 꾸미기 모달 */
   .prof-preview { display: flex; justify-content: center; margin-bottom: 18px; }
   .prof-preview .av-box { width: 88px; height: 88px; }
@@ -749,8 +747,9 @@
   .prof-sw.on { border-color: var(--text); }
   .prof-sw.auto { background: var(--surface); color: var(--text-secondary); font-size: 10px; font-weight: 800; border: 1.5px dashed var(--border); }
   .prof-sw.auto.on { border: 3px solid var(--text); }
-  .prof-row { display: flex; gap: 10px; margin-top: 8px; }
-  .prof-btn { flex: 1; padding: 12px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-weight: 700; font-family: inherit; font-size: 13.5px; cursor: pointer; }
+  .prof-shapes { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+  .prof-shape { width: 48px; height: 48px; border-radius: 14px; border: 2px solid transparent; background: var(--surface); cursor: pointer; padding: 4px; outline: none; }
+  .prof-shape.on { border-color: var(--text); }
 </style>
 </head>
 <body>
@@ -970,12 +969,8 @@
     <div class="prof-preview"><div class="av-box" id="prof-preview"></div></div>
     <label class="form-label">색 고르기</label>
     <div class="prof-swatches" id="prof-swatches"></div>
-    <label class="form-label" style="margin-top:18px">프로필 사진</label>
-    <div class="prof-row">
-      <button class="prof-btn" type="button" onclick="document.getElementById('prof-photo-input').click()">📷 사진 올리기</button>
-      <button class="prof-btn" type="button" id="prof-photo-clear" onclick="profClearPhoto()" style="display:none">사진 지우기</button>
-    </div>
-    <input type="file" id="prof-photo-input" accept="image/*" style="display:none" onchange="profPhotoSelect(event)">
+    <label class="form-label" style="margin-top:18px">모양 고르기</label>
+    <div class="prof-shapes" id="prof-shapes"></div>
     <button class="btn-primary" style="margin-top:22px" id="prof-save" onclick="profSave()">저장</button>
   </div>
 </div>
@@ -2383,10 +2378,11 @@ function avatarStyle(name) {
   return _avPalette[h % _avPalette.length];
 }
 
-// ─── 아바타 (블롭 캐릭터 / 프로필 사진) ──────────────────────────
-// 기본은 이름 해시로 색·모양 고정, MY에서 색 변경·사진 업로드 시 profiles에 공유 저장.
-const AV_COLORS = ['#F4D43C','#19B36B','#FF5A5A','#3E8BFF','#9B6BFF','#FF9A3D','#2CD4C0','#FF72B6'];
-let _profiles = {};      // name -> { color, photo }
+// ─── 아바타 (블롭 캐릭터) ──────────────────────────
+// 기본은 이름 해시로 색·모양 고정, MY에서 색·모양을 직접 골라 profiles에 공유 저장.
+const AV_COLORS = ['#E2DB14','#F4B82E','#FF8A3D','#FF5A3C','#F0453E','#CE2F2A','#00B863','#7BC043','#2CD4C0','#5BC0EB','#6C8CFF','#A77DFF','#FF7FB6','#FF5C8A'];
+const AV_NSHAPES = 6;    // 고를 수 있는 블롭 모양 개수
+let _profiles = {};      // name -> { color, shape }
 let _avUID = 0;
 const profKey = name => ((name || '').replace(/[\/.#$\[\]\u0000-\u001f]/g, '_').slice(0, 120) || '_');
 function _avHash(name) { let h = 2166136261; for (const c of (name || '?')) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return Math.abs(h); }
@@ -2396,7 +2392,7 @@ function _avBlobPath(seed) {
   const pts = 10, cx = 50, cy = 51, base = 43;
   const rand = n => { const x = Math.sin(seed * 99.13 + n * 17.7) * 43758.5; return x - Math.floor(x); };
   const P = [];
-  for (let i = 0; i < pts; i++) { const a = (i / pts) * Math.PI * 2; const r = base * (1 + (rand(i) - 0.5) * 0.14); P.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r * 0.98]); }
+  for (let i = 0; i < pts; i++) { const a = (i / pts) * Math.PI * 2; const r = base * (1 + (rand(i) - 0.5) * 0.18); P.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r * 0.98]); }
   let d = `M${P[0][0].toFixed(1)} ${P[0][1].toFixed(1)}`;
   for (let i = 0; i < pts; i++) { const p0 = P[(i-1+pts)%pts], p1 = P[i], p2 = P[(i+1)%pts], p3 = P[(i+2)%pts];
     const c1x = p1[0]+(p2[0]-p0[0])/6, c1y = p1[1]+(p2[1]-p0[1])/6, c2x = p2[0]-(p3[0]-p1[0])/6, c2y = p2[1]-(p3[1]-p1[1])/6;
@@ -2408,12 +2404,15 @@ function avColorOf(name, override) {
   if (o && o.color) return o.color;
   return AV_COLORS[Math.floor((_avHash(name) % 997) / 997 * AV_COLORS.length)];
 }
-// 이름(+선택적 override)으로 아바타 비주얼(svg 블롭 또는 img) HTML 반환
-function avatarVisual(name, override) {
+function avShapeOf(name, override) {
   const o = override || _profiles[name];
-  if (o && o.photo) return `<img class="av-photo" src="${esc(o.photo)}" alt="">`;
+  if (o && o.shape != null && o.shape !== '') return ((Number(o.shape) % AV_NSHAPES) + AV_NSHAPES) % AV_NSHAPES;
+  return _avCho(name) % AV_NSHAPES;
+}
+// 이름(+선택적 override)으로 아바타 비주얼(svg 블롭) HTML 반환
+function avatarVisual(name, override) {
   const color = avColorOf(name, override);
-  const d = _avBlobPath((_avCho(name) % 7) + 1);
+  const d = _avBlobPath(avShapeOf(name, override) + 1);
   const u = 'a' + (++_avUID);
   return `<svg class="av-svg" viewBox="-6 -4 112 114" aria-hidden="true"><defs>`
     + `<clipPath id="c${u}"><path d="${d}"/></clipPath>`
@@ -2428,83 +2427,49 @@ function avatarVisual(name, override) {
 }
 function startProfilesListener() {
   db.collection('profiles').onSnapshot(snap => {
-    const m = {}; snap.forEach(dd => { const x = dd.data(); if (x && x.name) m[x.name] = { color: x.color || '', photo: x.photo || '' }; });
+    const m = {}; snap.forEach(dd => { const x = dd.data(); if (x && x.name) m[x.name] = { color: x.color || '', shape: (x.shape != null ? x.shape : '') }; });
     _profiles = m;
     if (_activeTab === 'ranking') renderRanking();
     if (_activeTab === 'my') renderMy();
   }, e => console.warn('profiles', e && e.code));
 }
 
-// ─── 프로필 꾸미기 (색 선택 / 사진 업로드) ───────────────────────
-let _profEdit = null; // { color, photo, blob, removePhoto }
+// ─── 프로필 꾸미기 (색 + 모양 선택) ───────────────────────
+let _profEdit = null; // { color, shape }
 function openProfileModal() {
   if (!myNickname) { showToast('먼저 닉네임을 정해주세요'); editNickname(); return; }
   const cur = _profiles[myNickname] || {};
-  _profEdit = { color: cur.color || '', photo: cur.photo || '', blob: null, removePhoto: false };
+  _profEdit = { color: cur.color || '', shape: (cur.shape != null && cur.shape !== '') ? Number(cur.shape) : avShapeOf(myNickname) };
   renderProfSwatches();
+  renderProfShapes();
   renderProfPreview();
-  document.getElementById('prof-photo-clear').style.display = _profEdit.photo ? '' : 'none';
   openModal('profile-modal-overlay');
 }
 function renderProfPreview() {
-  const o = { color: _profEdit.color, photo: _profEdit.photo };
-  document.getElementById('prof-preview').innerHTML = avatarVisual(myNickname, o);
+  document.getElementById('prof-preview').innerHTML = avatarVisual(myNickname, { color: _profEdit.color, shape: _profEdit.shape });
 }
 function renderProfSwatches() {
   const wrap = document.getElementById('prof-swatches');
-  const autoOn = !_profEdit.color ? ' on' : '';
-  let html = `<button type="button" class="prof-sw auto${autoOn}" onclick="profPickColor('')">자동</button>`;
+  let html = `<button type="button" class="prof-sw auto${!_profEdit.color ? ' on' : ''}" onclick="profPickColor('')">자동</button>`;
   html += AV_COLORS.map(c => `<button type="button" class="prof-sw${_profEdit.color === c ? ' on' : ''}" style="background:${c}" onclick="profPickColor('${c}')"></button>`).join('');
   wrap.innerHTML = html;
 }
-function profPickColor(c) {
-  _profEdit.color = c;
-  // 색을 고르면 사진은 해제(둘 중 하나만 보이므로 미리보기에서 블롭을 보이게)
-  _profEdit.photo = ''; _profEdit.blob = null; _profEdit.removePhoto = true;
-  document.getElementById('prof-photo-clear').style.display = 'none';
-  renderProfSwatches(); renderProfPreview();
+function renderProfShapes() {
+  const wrap = document.getElementById('prof-shapes');
+  const col = _profEdit.color || avColorOf(myNickname);
+  let html = '';
+  for (let i = 0; i < AV_NSHAPES; i++) {
+    html += `<button type="button" class="prof-shape${_profEdit.shape === i ? ' on' : ''}" onclick="profPickShape(${i})">${avatarVisual(myNickname, { color: col, shape: i })}</button>`;
+  }
+  wrap.innerHTML = html;
 }
-function profPhotoSelect(e) {
-  const file = e.target.files[0]; e.target.value = '';
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = ev => {
-    const img = new Image();
-    img.onload = () => {
-      // 정사각 중앙 크롭 → 320px webp
-      const S = 320, canvas = document.createElement('canvas'); canvas.width = S; canvas.height = S;
-      const side = Math.min(img.width, img.height);
-      const sx = (img.width - side) / 2, sy = (img.height - side) / 2;
-      canvas.getContext('2d').drawImage(img, sx, sy, side, side, 0, 0, S, S);
-      canvas.toBlob(blob => {
-        _profEdit.blob = blob; _profEdit.photo = canvas.toDataURL('image/webp', 0.85); _profEdit.removePhoto = false;
-        document.getElementById('prof-photo-clear').style.display = '';
-        renderProfPreview();
-      }, 'image/webp', 0.85);
-    };
-    img.src = ev.target.result;
-  };
-  reader.readAsDataURL(file);
-}
-function profClearPhoto() {
-  _profEdit.photo = ''; _profEdit.blob = null; _profEdit.removePhoto = true;
-  document.getElementById('prof-photo-clear').style.display = 'none';
-  renderProfPreview();
-}
+function profPickColor(c) { _profEdit.color = c; renderProfSwatches(); renderProfShapes(); renderProfPreview(); }
+function profPickShape(i) { _profEdit.shape = i; renderProfShapes(); renderProfPreview(); }
 async function profSave() {
   const btn = document.getElementById('prof-save'); btn.disabled = true; btn.textContent = '저장 중...';
   try {
-    let photoUrl = _profEdit.blob ? null : _profEdit.photo;
-    if (_profEdit.blob) {
-      const ref = storage.ref(`avatars/${profKey(myNickname)}/${Date.now()}.webp`);
-      await ref.put(_profEdit.blob, { contentType: 'image/webp' });
-      photoUrl = await ref.getDownloadURL();
-    }
-    const data = { name: myNickname, updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
+    const data = { name: myNickname, shape: _profEdit.shape, updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
     data.color = _profEdit.color ? _profEdit.color : firebase.firestore.FieldValue.delete();
-    if (_profEdit.removePhoto && !photoUrl) data.photo = firebase.firestore.FieldValue.delete();
-    else if (photoUrl) data.photo = photoUrl;
-    else data.photo = firebase.firestore.FieldValue.delete();
     await db.collection('profiles').doc(profKey(myNickname)).set(data, { merge: true });
     showToast('프로필을 저장했어요 ✨');
     closeModal('profile-modal-overlay');
