@@ -64,6 +64,20 @@ service cloud.firestore {
       // update/delete는 허용하지 않음 (한 번 남기면 수정 불가).
     }
 
+    // 프로필 꾸미기 — 닉네임 기준 색/사진. 익명 인증 공용(소프트 게이트).
+    function isValidProfile(d) {
+      return d.keys().hasOnly(['name','color','photo','updatedAt'])
+        && d.name is string && d.name.size() > 0 && d.name.size() <= 50
+        && (!('color' in d)  || (d.color is string && d.color.size() <= 16))
+        && (!('photo' in d)  || (d.photo is string && d.photo.size() <= 1000))
+        && (!('updatedAt' in d) || d.updatedAt is timestamp);
+    }
+    match /profiles/{profileId} {
+      allow read:          if isSignedIn();
+      allow create, update: if isSignedIn() && isValidProfile(request.resource.data);
+      allow delete:        if isSignedIn();
+    }
+
     // 그 외 모든 경로는 기본 거부.
   }
 }
