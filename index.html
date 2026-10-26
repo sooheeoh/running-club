@@ -30,7 +30,7 @@
 <link rel="preconnect" href="https://www.gstatic.com">
 <link rel="preconnect" href="https://firestore.googleapis.com">
 <link rel="preconnect" href="https://identitytoolkit.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Gothic+A1:wght@700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&display=swap" rel="stylesheet">
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -423,7 +423,7 @@
   .neon-track {
     display: inline-flex;
     gap: 0;
-    /* 웹폰트(Archivo Black)가 준비되기 전엔 글자를 숨겨 폰트 스왑으로 크기가 '왔다갔다'하는 현상 방지 */
+    /* 웹폰트(Black Han Sans)가 준비되기 전엔 글자를 숨겨 폰트 스왑으로 크기가 '왔다갔다'하는 현상 방지 */
     opacity: 0;
     transition: opacity .25s ease;
     animation: neon-scroll 60s linear infinite;
@@ -447,8 +447,8 @@
     color: #39FF8F;
     text-shadow: 0 0 7px #39FF8F, 0 0 16px #1aff70;
     padding: 0 24px;
-    /* 한글은 Archivo Black에 글리프가 없어 폴백됨 → Gothic A1을 명시해 크기가 들쭉날쭉하지 않게 */
-    font-family: 'Archivo Black', 'Gothic A1', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+    /* 한글·영문을 모두 커버하는 단일 폰트(Black Han Sans)로 통일 → 섞여서 크기 어긋나는 현상 방지 */
+    font-family: 'Black Han Sans', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
   }
   .neon-sep {
     display: inline-block;
@@ -456,7 +456,7 @@
     text-shadow: 0 0 8px #FF2D78, 0 0 18px #FF2D78;
     font-size: 13px;
     font-style: italic;
-    font-family: 'Archivo Black', sans-serif;
+    font-family: 'Black Han Sans', 'Apple SD Gothic Neo', sans-serif;
     padding: 0 6px;
   }
 
