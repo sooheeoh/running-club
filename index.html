@@ -30,7 +30,7 @@
 <link rel="preconnect" href="https://www.gstatic.com">
 <link rel="preconnect" href="https://firestore.googleapis.com">
 <link rel="preconnect" href="https://identitytoolkit.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Gothic+A1:wght@700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -447,7 +447,8 @@
     color: #39FF8F;
     text-shadow: 0 0 7px #39FF8F, 0 0 16px #1aff70;
     padding: 0 24px;
-    font-family: 'Archivo Black', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+    /* 한글은 Archivo Black에 글리프가 없어 폴백됨 → Gothic A1을 명시해 크기가 들쭉날쭉하지 않게 */
+    font-family: 'Archivo Black', 'Gothic A1', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
   }
   .neon-sep {
     display: inline-block;
@@ -1638,7 +1639,9 @@ async function openDetailById(id) {
   if (run) openDetail(run);
 }
 
+let _detailRun = null;
 async function openDetail(run) {
+  _detailRun = run;
   const isSpecial = run.type === 'special';
   const isRace = run.type === 'race';
   const completed = isCompleted(run);
@@ -2431,7 +2434,19 @@ function startProfilesListener() {
     _profiles = m;
     if (_activeTab === 'ranking') renderRanking();
     if (_activeTab === 'my') renderMy();
+    refreshAvatarsInDOM();
   }, e => console.warn('profiles', e && e.code));
+}
+// 열려있는 상세 화면 아바타를 현재 프로필 색·모양으로 즉시 갱신(크라운·x버튼 유지)
+function refreshAvatarsInDOM() {
+  document.querySelectorAll('.dt-av.av-box').forEach(box => {
+    const nameEl = box.parentElement && box.parentElement.querySelector('.dt-avname');
+    const svg = box.querySelector('.av-svg');
+    if (!nameEl || !svg) return;
+    const tmp = document.createElement('div');
+    tmp.innerHTML = avatarVisual(nameEl.textContent);
+    if (tmp.firstElementChild) svg.replaceWith(tmp.firstElementChild);
+  });
 }
 
 // ─── 프로필 꾸미기 (색 + 모양 선택) ───────────────────────
